@@ -1,0 +1,33 @@
+#createProduct {
+    width: 90%;
+    margin: auto;
+}
+
+#createProduct  button {
+    margin-top: 15px;
+}
+
+#productImage {
+    visibility: hidden;
+}
+
+#productImagePreview {
+    width: 100%;
+    height: 200px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    margin-top: 15px;
+}
+
+@media screen and (min-width: 600px) {
+    #createProduct {
+        width: 700px;
+        margin: auto;
+    }
+    
+    #createProduct  button {
+        margin-top: 15px;
+    }
+    
+}

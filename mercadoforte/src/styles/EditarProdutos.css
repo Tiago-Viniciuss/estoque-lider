@@ -1,0 +1,200 @@
+#productsContainer {
+    width: 100%;
+    padding: 5px;
+    margin: 0px;
+}
+
+.searchProductInput {
+    width: 600px;
+    padding: 10px;
+    margin: 0px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: none;
+}
+
+#productsContainer #chooseCategory {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding-left: 2px;
+}
+
+#productsContainer #chooseCategory button {
+    border-radius: 10px;
+    font-size: 10px;
+}
+
+#productsContainer button:hover {
+    background-color: black;
+    color: white;
+}
+
+#productsEditing {
+    display: flex;
+    justify-content: center;
+    width: 350px;
+    margin: auto;
+}
+
+.priceTable {
+    width: 150px;
+}
+
+#productsList {
+    width: 300px;
+    margin: auto;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+    margin: 0px;
+}
+
+#productsList th {
+    border: 1px solid black;
+    padding-left: 10px;
+}
+
+#productsList tr {
+    border: 1px solid black;
+}
+
+#productsList td {
+    border: 1px solid black;
+    padding-left: 10px;
+}
+
+#productsList tbody {
+    border: 1px solid black;
+}
+
+#productsList .editProduct {
+    display: flex;
+    justify-content: space-between;
+    border: none;
+}
+
+#productsList .editProduct span {
+    cursor: pointer;
+}
+
+#editingTool {
+    position: relative;
+    width: 350px;
+    padding: 25px;
+    background-color: var(--primary-color);
+}
+
+#editingTool label {
+    font-size: 18px;
+    font-weight: 500;
+    margin-top: 15px;
+}
+
+#editingTool span {
+    position: absolute;
+    right: 20px;
+    top: 5px;
+    cursor: pointer;
+    font-size: 30px;
+}
+
+#editingTool button {
+    margin-top: 15px;
+}
+
+
+@media screen and (min-width: 600px) {
+
+#productsContainer {
+    position: absolute;
+    top: 0;
+    left: 0px;
+    width: 100%;
+    padding: 25px 0px 100px 0px;
+    background-color: var(--primary-color);
+}
+
+#productsContainer #chooseCategory {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+#productsContainer #chooseCategory button {
+    border-radius: 10px;
+    font-size: 16px;
+}
+
+#productsContainer button:hover {
+    background-color: black;
+    color: white;
+}
+
+#productsEditing {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+#productsList {
+    width: 700px;
+    margin: auto;
+    font-size: 18px;
+    font-weight: 500;
+    text-align: left;
+}
+
+#productsList th {
+    border: 1px solid black;
+    padding-left: 10px;
+}
+
+#productsList tr {
+    border: 1px solid black;
+}
+
+#productsList td {
+    border: 1px solid black;
+    padding-left: 10px;
+}
+
+#productsList tbody {
+    border: 1px solid black;
+}
+
+#productsList .editProduct {
+    display: flex;
+    justify-content: space-between;
+    border: none;
+}
+
+#productsList .editProduct span {
+    cursor: pointer;
+}
+
+#editingTool {
+    position: relative;
+    width: 700px;
+    padding: 25px;
+    background-color: var(--primary-color);
+}
+
+#editingTool label {
+    font-size: 18px;
+    font-weight: 500;
+    margin-top: 15px;
+}
+
+#editingTool span {
+    position: absolute;
+    right: 20px;
+    top: 5px;
+    cursor: pointer;
+    font-size: 30px;
+}
+
+#editingTool button {
+    margin-top: 15px;
+}
+}

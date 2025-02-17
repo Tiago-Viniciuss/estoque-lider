@@ -1,0 +1,10 @@
+#loginPage {
+    width: 70%;
+    margin: auto;
+}
+
+#loginPage form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}

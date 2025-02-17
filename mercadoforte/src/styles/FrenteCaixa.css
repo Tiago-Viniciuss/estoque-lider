@@ -1,0 +1,528 @@
+#activeUser {
+    position: fixed;
+    top: 0px;
+    left: 20px;
+    color: #888888;
+}
+
+#activeUser .material-symbols-outlined {
+    font-size: 12px;
+    background-color: transparent;
+    border: none;
+}
+
+#companyTag {
+    background-color: var(--secondary-color);
+    color: white;
+    font-weight: 500;
+    border-radius: 15px;
+    font-size: 12px;
+    position: fixed;
+    top: 2px;
+    left: 25px;
+    padding: 10px;
+}
+
+#frenteCaixaContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+#frenteCaixa {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+}
+
+#frenteCaixa h1 {
+    padding: 20px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+
+#shoppingList {
+    width: 100%;
+    height: 300px;
+    background-color: rgb(234, 234, 234);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px;
+    border-radius: 0px 0px 15px 15px;
+    overflow-x: hidden;
+}
+
+#shoppingList .product {
+    background-color: rgb(19, 103, 181);
+    width: 90%;
+    height: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0px;
+    padding: 10px;
+    border-radius: 15px;
+    color: white;
+    font-weight: bold;
+    font-size: 10px;
+}
+
+.product span {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.product button {
+    background-color: white;
+    color: red;
+    border-radius: 10px;
+    font-size: 6px;
+}
+
+#checkout {
+    width: 100%;
+    height: 230px;
+    padding: 15px;
+    background-color: rgb(234, 234, 234);
+    margin: none;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    border-radius: 0px 0px 15px 15px;
+}
+ 
+#checkout input {
+    margin: 5px;
+}
+
+#checkoutButtons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+#totalValue {
+    width: 90%;
+    height: 50px;
+    border: 1px solid black;
+    border-radius: 15px;
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: white;
+    font-weight: 500;
+
+}
+
+#searchBar {
+    width: 100%;
+    height: 180px;
+    border-radius: 15px 15px 0px 0px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgb(234, 234, 234);
+}
+
+#searchBar input {
+    width: 300px;
+    height: 30px;
+}
+
+#searchResult {
+    width: 360px;
+    height: 220px;
+    background-color: lightgray;
+    border-radius: 15px;
+    padding: 20px;
+    overflow-x: hidden;
+    margin-top: 10px;
+}
+
+#searchResult p {
+    color: white;
+    background-color: rgb(19, 103, 181);
+    width: 100%;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: 600;
+    text-align: left;
+    padding: 10px;
+    display: flex;
+    justify-content: space-around;
+}
+
+#searchResult p:hover {
+    background-color: rgb(0, 0, 0);
+    color: white;
+}
+
+#background {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.771);
+    position: fixed;
+    top: 0px;
+    left: 0px;
+}
+
+#saveShoppingContainer {
+    background-color: rgb(241, 242, 242);
+    width: 400px;
+    height: 550px;
+    border-radius: 15px;
+    display: flex;
+    justify-content: space-around;
+    padding: 15px 0px 5px 5px;
+    position: absolute;
+    top: 10%;
+}
+
+#saveShoppingContainer h2 {
+    margin-top: 25px;
+    font-size: 16px;
+}
+
+#closeShop {
+    position: absolute;
+    right: 0;
+    background-color: red;
+    color: white;
+    border-radius: 0px 15px 0px 15px;
+    font-size: 15px;
+    margin-top: -15px;
+}
+
+#listCheck {
+    width: 200px;
+    height: 400px;
+    background-color: snow;
+    overflow-y: auto;
+    overflow-x: hidden;
+    list-style: none;
+    font-weight: 500;
+    border-radius: 15px;
+    text-align: left;
+    padding: 15px;
+}
+
+#listCheck li {
+    width: 180px;
+    font-size: 10px;
+}
+
+#clientData {
+    width: 180px;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    font-size: 10px;
+}
+
+#clientData input {
+    width: 180px;
+    height: 30px;
+}
+
+#clientData label {
+    margin-top: 10px;
+}
+
+.client-suggestions {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid #ccc;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.client-suggestions li {
+    padding: 10px;
+    cursor: pointer;
+    background-color: #fff;
+}
+
+.client-suggestions li:hover {
+    background-color: #676767;
+    color: white;
+}
+
+#calculateTotal {
+    font-size: 15px;
+    font-weight: 500;
+}
+
+
+.changeValue {
+    color: red;
+    font-size: 10px;
+}
+
+.smallProductImage {
+    width: 30px;
+    height: 30px;
+}
+
+
+
+@media screen and (min-width: 600px) {
+    #frenteCaixa {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: start;
+        flex-wrap: wrap;
+        gap: 30px;
+        padding: 25px;
+    }
+
+    #frenteCaixa h1 {
+        padding: 20px;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+    }
+
+    #shoppingList {
+        width: 45%;
+        height: 580px;
+        background-color: rgb(234, 234, 234);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 20px 15px 15px 15px;
+        border-radius: 15px;
+        overflow-x: hidden;
+    }
+
+    #shoppingList .product {
+        background-color: rgb(19, 103, 181);
+        width: 90%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 0px;
+        padding: 10px;
+        border-radius: 15px;
+        color: white;
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .product span {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+    }
+
+    .product button {
+        background-color: white;
+        color: red;
+        border-radius: 10px;
+    }
+
+    #checkout {
+        width: 100%;
+        height: 310px;
+        border-radius: 15px;
+        padding: 15px;
+        background-color: rgb(234, 234, 234);
+        margin-top: 25px;
+    }
+
+    #checkoutButtons {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+    }
+
+    #totalValue {
+        width: 90%;
+        height: 100px;
+        border: 2px solid black;
+        border-radius: 15px;
+        margin: auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #searchBar {
+        width: 100%;
+        height: 250px;
+        border-radius: 15px;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background-color: rgb(234, 234, 234);
+    }
+
+    #searchBar input {
+        width: 85%;
+    }
+
+    #searchResult {
+        width: 85%;
+        height: 220px;
+        background-color: lightgray;
+        border-radius: 15px;
+        padding: 20px;
+        overflow-x: hidden;
+    }
+
+    #searchResult p {
+        color: white;
+        background-color: rgb(19, 103, 181);
+        width: 80%;
+        border-radius: 10px;
+        font-size: 13px;
+        text-align: left;
+        padding: 10px;
+    }
+
+    #searchResult p:hover {
+        background-color: rgb(0, 0, 0);
+        color: white;
+    }
+
+    #background {
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.771);
+        position: fixed;
+        top: 0px;
+        left: 0px;
+    }
+
+    #saveShoppingContainer {
+        background-color: rgb(241, 242, 242);
+        width: 800px;
+        height: 650px;
+        position: fixed;
+        top: 10%;
+        left: 25%;
+        border-radius: 15px;
+        display: flex;
+        justify-content: space-around;
+    }
+
+    #saveShoppingContainer h2 {
+        margin-top: 25px;
+        font-size: 16px;
+    }
+
+    #closeShop {
+        position: absolute;
+        right: 0;
+        background-color: red;
+        color: white;
+        border-radius: 0px 15px 0px 15px;
+        font-size: 15px;
+    }
+
+    #listCheck {
+        width: 300px;
+        height: 400px;
+        background-color: snow;
+        overflow-y: auto;
+        overflow-x: hidden;
+        list-style: none;
+        font-weight: 500;
+        border-radius: 15px;
+        text-align: left;
+        padding: 15px;
+    }
+
+    #listCheck li {
+        width: 400px;
+        font-size: 16px;
+    }
+
+    #clientData {
+        width: 450px;
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+        font-size: 16px;
+    }
+
+    #clientData input {
+        width: 300px;
+    }
+
+    #clientData label {
+        margin-top: 10px;
+    }
+
+    .client-suggestions {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        border: 1px solid #ccc;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+
+    .client-suggestions li {
+        padding: 10px;
+        cursor: pointer;
+        background-color: #fff;
+    }
+
+    .client-suggestions li:hover {
+        background-color: #676767;
+        color: white;
+    }
+
+    #calculateTotal {
+        font-size: 25px;
+        font-weight: 500;
+    }
+
+
+    .changeValue {
+        color: red;
+        font-size: 18px;
+    }
+
+    #totalValue {
+        background-color: white;
+        font-size: 20px;
+    }
+
+    #extraValues {
+        display: flex;
+        justify-content: space-around;
+        gap: 10px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
+
+    #extraValues input {
+        width: 200px;
+        margin: 0px;
+    }
+
+    #checkoutButtons {
+        margin-top: 20px;
+    }
+
+    #checkoutButtons button {
+        width: 200px;
+    }
+}
