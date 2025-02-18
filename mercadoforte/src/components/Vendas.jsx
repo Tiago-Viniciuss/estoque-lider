@@ -222,13 +222,18 @@ const Vendas = () => {
                             close
                         </button>
                         <h2>Detalhes da Venda:</h2>
-                        <p><strong>Operador:</strong>{selectedSale.Operador}</p>
+                        {/*<p><strong>Operador:</strong>{selectedSale.Operador}</p> */}
                         <p><strong>Cliente:</strong> {selectedSale.Cliente.nome}</p>
                         <p><strong>Telefone:</strong> {selectedSale.Cliente.telefone}</p>
                         <p><strong>Data:</strong> {new Date(selectedSale.Data.seconds * 1000).toLocaleString()}</p>
                         <p><strong>Total:</strong> R${selectedSale.TotalVenda.toFixed(2)}</p>
                         <p><strong>Pago:</strong> R${selectedSale.Pago|| ''}</p>
                         <p><strong>Fiado:</strong> R${selectedSale.Fiado|| ''}</p>
+                        <p>
+                            <strong>Forma de Pagamento:</strong> {
+                                selectedSale.FormaPagamento
+                            }
+                        </p>
                         <h3>Itens da Venda:</h3>
                         <ul>
                             {selectedSale.Lista.map((item, index) => (

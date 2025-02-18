@@ -16,11 +16,16 @@ export const Home = () => {
 
   return (
     <div id='home'>
-      <h1 id='logoTitle'><span id='logoImg'></span> Mercado Forte®</h1>
+      <h1 id='logoTitle'>
+        <span id='logoImg'></span>
+        Mercado Forte
+      </h1>
+      <p id='logoSlogan'>Automações e Tecnologia <br />
+      75 99105-7248</p>
       {activeSection === 'FrenteCaixa' && <FrenteCaixa shoppingList={shoppingList} setShoppingList={setShoppingList} />}
       {activeSection === 'CriarProduto' && <CriarProduto />}
       {activeSection === 'EditarProdutos' && <EditarProdutos />}
-      {activeSection === 'Balanço' &&<Balanço />}
+      {activeSection === 'Balanço' && <Balanço />}
       {activeSection === 'Vendas' && <Vendas />}
       {activeSection === 'Clientes' && <Clientes />}
       {activeSection === 'EntradaDeNotas' && <EntradaDeNotas />}
@@ -28,9 +33,9 @@ export const Home = () => {
       <menu id="menuNavigation">
         {[
           { label: 'VENDER', section: 'FrenteCaixa' },
-          { label: 'CRIAR PRODUTO', section: 'CriarProduto' },{ label: 'EDITAR PRODUTOS', section: 'EditarProdutos' },
+          { label: 'CRIAR PRODUTO', section: 'CriarProduto' }, { label: 'EDITAR PRODUTOS', section: 'EditarProdutos' },
           { label: 'VENDAS FEITAS', section: 'Vendas' },
-          { label: 'CLIENTES', section: 'Clientes' }, { label: 'ENTRADA DE NOTAS', section: 'EntradaDeNotas' },{ label: 'BALANÇO', section: 'Balanço' },
+          { label: 'CLIENTES', section: 'Clientes' }, { label: 'ENTRADA DE NOTAS', section: 'EntradaDeNotas' }, { label: 'BALANÇO', section: 'Balanço' },
         ].map(({ label, section }) => (
           <button
             key={section}

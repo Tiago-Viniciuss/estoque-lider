@@ -23,6 +23,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   const [noPaidModal, setNoPaidModal] = useState(false)
   const [changeValue, setChangeValue] = useState(0)
   const [changeValueModal, setChangeValueModal] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState('')
   const [loading, setLoading] = useState(false)
   const [activeUser, setActiveUser] = useState('')
   const empresaId = localStorage.getItem('empresaId');
@@ -179,6 +180,10 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
     handleUser()
   })
 
+  const handlePaymentMethod = (e) => {
+    setPaymentMethod(e.target.value)
+  }
+
   const saveShopping = async (e) => {
     e.preventDefault();
     setLoading(true)
@@ -254,6 +259,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
         Data: new Date(),
         Pago: Pago,
         Fiado: parseFloat(noPaid),
+        FormaPagamento: paymentMethod
       });
 
       // Atualiza o estoque dos produtos
@@ -450,9 +456,9 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
           <button className='material-symbols-outlined' onClick={logoutUser}>logout</button>
         </span>
       </span>**/}
-      <button className='material-symbols-outlined' onClick={logoutUser}>logout</button>
+      
       <span id='companyTag'>
-        {companyName}
+        {companyName} <button id='logoutButton' className='material-symbols-outlined' onClick={logoutUser}>logout</button>
       </span>
       <main id="frenteCaixa">
         <section id="shoppingList">
@@ -605,7 +611,16 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                       <p className='changeValue' onChange={handleChangeValue}> <strong><i>O troco é de R${changeValue}</i></strong></p>
                    
 
-
+                      <label htmlFor="paymentMethod">Qual a forma de pagamento?</label>
+                    <select name="paymentMethod" id="paymentMethod" className='form-control' onChange={handlePaymentMethod} required value={paymentMethod}>
+                      <optgroup>
+                        <option value="" disabled>-- Selecione aqui --</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="Pix">Pix</option>
+                        <option value="A Prazo">A Prazo</option>
+                        <option value="Cartão">Cartão</option>
+                      </optgroup>
+                    </select>
                    
                         <div>
                           <label htmlFor="noPaid">O fiado será:</label>
