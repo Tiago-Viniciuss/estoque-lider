@@ -450,6 +450,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
           <button className='material-symbols-outlined' onClick={logoutUser}>logout</button>
         </span>
       </span>**/}
+      <button className='material-symbols-outlined' onClick={logoutUser}>logout</button>
       <span id='companyTag'>
         {companyName}
       </span>
