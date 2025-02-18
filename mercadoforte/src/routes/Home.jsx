@@ -16,7 +16,7 @@ export const Home = () => {
 
   return (
     <div id='home'>
-      <h1 id='logoTitle'>Mercado Forte®</h1>
+      <h1 id='logoTitle'><span id='logoImg'></span> Mercado Forte®</h1>
       {activeSection === 'FrenteCaixa' && <FrenteCaixa shoppingList={shoppingList} setShoppingList={setShoppingList} />}
       {activeSection === 'CriarProduto' && <CriarProduto />}
       {activeSection === 'EditarProdutos' && <EditarProdutos />}

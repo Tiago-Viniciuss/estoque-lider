@@ -11,7 +11,7 @@ export default defineConfig({
         name: "Mercado Forte®", // Nome completo do projeto
         icons: [
           {
-            src: "/images/cart.png", // Substitua pelo caminho do ícone do seu projeto
+            src: "/images/cart2.png", // Substitua pelo caminho do ícone do seu projeto
             sizes: "192x192",
             type: "image/png"
           }
