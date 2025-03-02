@@ -22,16 +22,16 @@
     background-color: var(--secondary-color);
     color: white;
     font-weight: 500;
-    border-radius: 5px;
     font-size: 12px;
     position: fixed;
-    top: 2px;
-    left: 25px;
+    top: 0px;
+    left: 0px;
     padding: 10px;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 30px;
+    width: 100%;
 }
 
 #frenteCaixaContainer {
@@ -58,13 +58,14 @@
 }
 
 #shoppingList {
-    width: 100%;
+    width: 98%;
     height: 300px;
     background-color: rgb(234, 234, 234);
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding: 15px;
+    padding-top: 45px;
     border-radius: 0px 0px 15px 15px;
     overflow-x: hidden;
 }
@@ -72,7 +73,7 @@
 #shoppingList .product {
     background-color: rgb(19, 103, 181);
     width: 90%;
-    height: 40px;
+    height: 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -93,13 +94,13 @@
 .product button {
     background-color: white;
     color: red;
-    border-radius: 10px;
-    font-size: 6px;
+    border-radius: 50%;
+    font-size: 1px;
 }
 
 #checkout {
     width: 100%;
-    height: 230px;
+    height: 280px;
     padding: 15px;
     background-color: rgb(234, 234, 234);
     margin: none;
@@ -128,7 +129,7 @@
 
 #totalValue {
     width: 90%;
-    height: 50px;
+    height: 100px;
     border: 1px solid black;
     border-radius: 15px;
     margin: auto;
@@ -137,7 +138,11 @@
     align-items: center;
     background-color: white;
     font-weight: 500;
+    font-size: 12px;
+}
 
+#totalValue span {
+    font-weight: 800;
 }
 
 #searchBar {
@@ -192,11 +197,14 @@
     position: fixed;
     top: 0px;
     left: 0px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #saveShoppingContainer {
     background-color: rgb(241, 242, 242);
-    width: 400px;
+    width: 360px;
     height: 550px;
     border-radius: 15px;
     display: flex;
@@ -208,7 +216,11 @@
 
 #saveShoppingContainer h2 {
     margin-top: 25px;
-    font-size: 16px;
+    font-size: 15px;
+}
+
+#saveShoppingContainer input {
+    width: 100px;
 }
 
 #closeShop {
@@ -222,7 +234,7 @@
 }
 
 #listCheck {
-    width: 200px;
+    width: 180px;
     height: 400px;
     background-color: snow;
     overflow-y: auto;
@@ -246,15 +258,26 @@
     flex-direction: column;
     text-align: left;
     font-size: 10px;
+    padding: 5px;
 }
 
 #clientData input {
-    width: 180px;
+    width: 140px;
+    height: 30px;
+}
+
+#clientData select {
+    width: 140px;
     height: 30px;
 }
 
 #clientData label {
     margin-top: 10px;
+}
+
+#clientData button {
+    margin-right: 5px;
+    border-radius: 15px;
 }
 
 .client-suggestions {

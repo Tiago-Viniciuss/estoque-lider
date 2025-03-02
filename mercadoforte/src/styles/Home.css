@@ -3,16 +3,17 @@
 }
 
 #logoTitle {
-   position: fixed;
-   bottom: 5px;
-   right: 30px;
-   font-size: 30px;
-   color: white;
-   z-index: 50;
-   display: flex;
-   justify-content: center;
-   align-items: center;
-   gap: 10px;
+    position: fixed;
+    bottom: 5px;
+    right: 30px;
+    font-size: 30px;
+    color: white;
+    z-index: 50;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    display: none;
 }
 
 #logoTitle span {
@@ -28,7 +29,8 @@
     z-index: 50;
     display: flex;
     text-align: right;
- }
+    display: none;
+}
 
 #logoImg {
     width: 50px;
@@ -36,43 +38,84 @@
     background-image: url('/images/cart.png');
     background-position: center;
     background-size: cover;
+    display: none;
 }
+
+#openMenu {
+    position: fixed;
+    top: 8px;
+    left: 10px;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: 600;
+    background-color: transparent;
+    margin: 0px;
+    padding: 0px;
+    border: none;
+    z-index: 2;
+    color: white;
+}
+
 
 #menuNavigation {
     position: fixed;
     left: 0px;
     bottom: 0px;
     display: flex;
-    justify-content: start;
-    align-items: center;
+    flex-direction: column;
+    justify-content: left;
+    align-items: left;
     gap: 5px;
-    width: 100%;
-    height: 55px;
+    width: 300px;
+    height: 100vh;
     background-color: var(--secondary-color);
     margin-bottom: 0px;
+    padding-top: 70px;
     padding-left: 0px;
 }
+
+
 
 #menuNavigation button {
     height: 40px;
     border-radius: 10px;
-    font-size: 6px;
-
+    font-size: 10px;
 }
+
+#backgroundMenu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.8);
+    visibility: hidden;
+    transition: all 0.3s ease-in-out;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 3;
+}
+
+#backgroundMenu.opened {
+    width: 100%;
+    visibility: visible;
+}
+
 
 @media screen and (min-width: 600px) {
     #home {
         width: 100%;
     }
-    
+
     #logoTitle {
-       position: fixed;
-       bottom: 38px;
-       right: 50px;
-       font-size: 30px;
-       color: white;
-       z-index: 50;
-       display: flex;
+        position: fixed;
+        bottom: 38px;
+        right: 50px;
+        font-size: 30px;
+        color: white;
+        z-index: 50;
+        display: flex;
     }
 
     #logoSlogan {
@@ -84,12 +127,28 @@
         z-index: 50;
         display: flex;
         text-align: right;
-     }
-    
+    }
+
+    #logoImg {
+        display: block;
+    }
+
+    #openMenu {
+        position: fixed;
+        top: 0px;
+        left: 0px;
+        display: none;
+    }
+
+    #backgroundMenu {
+        visibility: visible;
+    }
+
     #menuNavigation {
         position: fixed;
         bottom: 0px;
         display: flex;
+        flex-direction: row;
         align-items: center;
         gap: 15px;
         width: 100%;
@@ -97,9 +156,10 @@
         height: 100px;
         padding-bottom: 0px;
         margin-bottom: 0px;
+        padding-top: 0px;
         padding-left: 15px;
     }
-    
+
     #menuNavigation button {
         border-radius: 10px;
         font-size: 14px;

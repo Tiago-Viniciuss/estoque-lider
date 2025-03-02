@@ -14,12 +14,27 @@ export const Home = () => {
   // Estado compartilhado para a lista de compras
   const [shoppingList, setShoppingList] = useState([]);
 
+  const openMenu = () => {
+    const menu = document.getElementById('backgroundMenu')
+
+    menu.classList.add('opened')
+  }
+
+  const closeMenu = () => {
+    const menu = document.getElementById('backgroundMenu')
+
+    menu.classList.remove('opened')
+  }
+
   return (
     <div id='home'>
       <h1 id='logoTitle'>
         <span id='logoImg'></span>
         Mercado Forte
       </h1>
+      <header>
+        <button className='material-symbols-outlined' id='openMenu' onClick={openMenu}>menu</button>
+      </header>
       <p id='logoSlogan'>Automações e Tecnologia <br />
       75 99105-7248</p>
       {activeSection === 'FrenteCaixa' && <FrenteCaixa shoppingList={shoppingList} setShoppingList={setShoppingList} />}
@@ -30,29 +45,31 @@ export const Home = () => {
       {activeSection === 'Clientes' && <Clientes />}
       {activeSection === 'EntradaDeNotas' && <EntradaDeNotas />}
 
-      <menu id="menuNavigation">
-        {[
-          { label: 'VENDER', section: 'FrenteCaixa' },
-          { label: 'CRIAR PRODUTO', section: 'CriarProduto' }, { label: 'EDITAR PRODUTOS', section: 'EditarProdutos' },
-          { label: 'VENDAS FEITAS', section: 'Vendas' },
-          { label: 'CLIENTES', section: 'Clientes' }, { label: 'ENTRADA DE NOTAS', section: 'EntradaDeNotas' }, { label: 'BALANÇO', section: 'Balanço' },
-        ].map(({ label, section }) => (
-          <button
-            key={section}
-            onClick={() => setActiveSection(section)}
-            style={{
-              backgroundColor: activeSection === section ? 'black' : 'white',
-              color: activeSection === section ? 'white' : 'black',
-              border: '1px solid black',
-              padding: '8px 8px',
-              cursor: 'pointer',
-              margin: '0 0px',
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </menu>
+      <div id='backgroundMenu' onClick={closeMenu}>
+        <menu id="menuNavigation">
+          {[
+            { label: 'VENDER', section: 'FrenteCaixa' },
+            { label: 'CRIAR PRODUTO', section: 'CriarProduto' }, { label: 'EDITAR PRODUTOS', section: 'EditarProdutos' },
+            { label: 'VENDAS FEITAS', section: 'Vendas' },
+            { label: 'CLIENTES', section: 'Clientes' }, { label: 'ENTRADA DE NOTAS', section: 'EntradaDeNotas' }, { label: 'BALANÇO', section: 'Balanço' },
+          ].map(({ label, section }) => (
+            <button
+              key={section}
+              onClick={() => setActiveSection(section)}
+              style={{
+                backgroundColor: activeSection === section ? 'black' : 'white',
+                color: activeSection === section ? 'white' : 'black',
+                border: '1px solid black',
+                padding: '8px 8px',
+                cursor: 'pointer',
+                margin: '0 0px',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </menu>
+      </div>
     </div>
   );
 };
