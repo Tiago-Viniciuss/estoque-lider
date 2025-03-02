@@ -16,14 +16,18 @@ export const Home = () => {
 
   const openMenu = () => {
     const menu = document.getElementById('backgroundMenu')
+    const nav = document.getElementById('menuNavigation')
 
     menu.classList.add('opened')
+    nav.classList.add('active')
   }
 
   const closeMenu = () => {
     const menu = document.getElementById('backgroundMenu')
+    const nav = document.getElementById('menuNavigation')
 
     menu.classList.remove('opened')
+    nav.classList.remove('active')
   }
 
   return (

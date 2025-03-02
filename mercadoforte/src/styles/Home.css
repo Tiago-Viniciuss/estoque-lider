@@ -66,7 +66,10 @@
     justify-content: left;
     align-items: left;
     gap: 5px;
-    width: 300px;
+    width: 0px;
+    visibility: hidden;
+    transition: all 0.2s ease-in-out;
+    overflow-x: hidden;
     height: 100vh;
     background-color: var(--secondary-color);
     margin-bottom: 0px;
@@ -74,7 +77,10 @@
     padding-left: 0px;
 }
 
-
+#menuNavigation.active {
+    width: 300px;
+    visibility: visible;
+}
 
 #menuNavigation button {
     height: 40px;
@@ -88,7 +94,7 @@
     left: 0;
     width: 0;
     height: 100vh;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: transparent;
     visibility: hidden;
     transition: all 0.3s ease-in-out;
     display: flex;
@@ -101,6 +107,8 @@
     width: 100%;
     visibility: visible;
 }
+
+
 
 
 @media screen and (min-width: 600px) {
@@ -158,6 +166,7 @@
         margin-bottom: 0px;
         padding-top: 0px;
         padding-left: 15px;
+        visibility: visible;
     }
 
     #menuNavigation button {
