@@ -508,11 +508,11 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
             </div>
           </section>
           <section id="checkout">
-            <p id="totalValue">
+            <div id="totalValue">
               <strong>
                 <p>VALOR TOTAL</p><span>R${calculateTotal()}</span>
               </strong>
-            </p>
+            </div>
             <div id='extraValues'>
               <input className='form-control'
                 type="number"
