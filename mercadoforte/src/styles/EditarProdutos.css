@@ -1,6 +1,7 @@
 #productsContainer {
     width: 100%;
     padding: 5px;
+    padding-top: 55px;
     margin: 0px;
 }
 
@@ -16,13 +17,14 @@
 #productsContainer #chooseCategory {
     display: flex;
     justify-content: center;
-    gap: 10px;
+    gap: 5px;
     padding-left: 2px;
+    font-size: 8px;
 }
 
 #productsContainer #chooseCategory button {
     border-radius: 10px;
-    font-size: 10px;
+    font-size: 9px;
 }
 
 #productsContainer button:hover {
@@ -48,40 +50,50 @@
     font-weight: 500;
     text-align: left;
     margin: 0px;
+    margin-bottom: 25px;
 }
 
 #productsList th {
     border: 1px solid black;
     padding-left: 10px;
+    font-size: 10px;
 }
 
 #productsList tr {
     border: 1px solid black;
+    font-size: 10px;
 }
 
 #productsList td {
     border: 1px solid black;
     padding-left: 10px;
+    font-size: 10px;
 }
 
 #productsList tbody {
     border: 1px solid black;
+    font-size: 10px;
 }
 
 #productsList .editProduct {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     border: none;
+    font-size: 10px;
 }
 
 #productsList .editProduct span {
     cursor: pointer;
+    font-size: 16px;
 }
 
 #editingTool {
     position: relative;
-    width: 350px;
+    width: 330px;
+    margin-top: 25px;
     padding: 25px;
+    border-radius: 10px;
     background-color: var(--primary-color);
 }
 
@@ -148,15 +160,18 @@
 #productsList th {
     border: 1px solid black;
     padding-left: 10px;
+    font-size: 14px;
 }
 
 #productsList tr {
     border: 1px solid black;
+    font-size: 14px;
 }
 
 #productsList td {
     border: 1px solid black;
     padding-left: 10px;
+    font-size: 14px;
 }
 
 #productsList tbody {

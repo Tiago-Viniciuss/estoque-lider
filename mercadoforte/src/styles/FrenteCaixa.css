@@ -34,13 +34,6 @@
     width: 100%;
 }
 
-#frenteCaixaContainer {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-}
-
 #frenteCaixa {
     display: flex;
     flex-direction: column;
@@ -129,7 +122,7 @@
 
 #totalValue {
     width: 90%;
-    height: 100px;
+    height: 50px;
     border: 1px solid black;
     border-radius: 15px;
     margin: auto;
@@ -138,11 +131,7 @@
     align-items: center;
     background-color: white;
     font-weight: 500;
-    font-size: 12px;
-}
 
-#totalValue span {
-    font-weight: 800;
 }
 
 #searchBar {
@@ -204,14 +193,14 @@
 
 #saveShoppingContainer {
     background-color: rgb(241, 242, 242);
-    width: 360px;
-    height: 550px;
+    width: 380px;
+    height: 400px;
     border-radius: 15px;
     display: flex;
     justify-content: space-around;
-    padding: 15px 0px 5px 5px;
-    position: absolute;
-    top: 10%;
+    padding-top: 10px;
+    overflow-y: auto;
+    position: relative;
 }
 
 #saveShoppingContainer h2 {
@@ -220,21 +209,21 @@
 }
 
 #saveShoppingContainer input {
-    width: 100px;
+    width: 130px;
 }
 
 #closeShop {
     position: absolute;
+    top: 0;
     right: 0;
     background-color: red;
     color: white;
     border-radius: 0px 15px 0px 15px;
     font-size: 15px;
-    margin-top: -15px;
 }
 
 #listCheck {
-    width: 180px;
+    width: 200px;
     height: 400px;
     background-color: snow;
     overflow-y: auto;
@@ -256,28 +245,33 @@
     height: 300px;
     display: flex;
     flex-direction: column;
+    align-items: center;
     text-align: left;
     font-size: 10px;
     padding: 5px;
 }
 
 #clientData input {
-    width: 140px;
+    width: 250px;
     height: 30px;
 }
 
 #clientData select {
-    width: 140px;
+    width: 250px;
     height: 30px;
+    font-size: 12px;
 }
 
 #clientData label {
     margin-top: 10px;
+    font-size: 15px;
 }
 
 #clientData button {
     margin-right: 5px;
-    border-radius: 15px;
+    border-radius: 15px; 
+    font-size: 14px;
+    width: 120px;
 }
 
 .client-suggestions {
@@ -287,6 +281,7 @@
     border: 1px solid #ccc;
     max-height: 150px;
     overflow-y: auto;
+    width: 250px;
 }
 
 .client-suggestions li {
@@ -300,6 +295,18 @@
     color: white;
 }
 
+.buttonArrow {
+    margin-top: 10px;
+}
+
+#clientData .buttonArrowBack {
+    position: absolute;
+    bottom: 5px;
+    right: 0;
+    font-size: 12px;
+    width: 60px;
+}
+
 #calculateTotal {
     font-size: 15px;
     font-weight: 500;
@@ -309,6 +316,7 @@
 .changeValue {
     color: red;
     font-size: 10px;
+    margin-bottom: 0px;
 }
 
 .smallProductImage {
@@ -338,15 +346,16 @@
 
     #shoppingList {
         width: 45%;
-        height: 570px;
+        height: 600px;
         background-color: rgb(234, 234, 234);
         display: flex;
         flex-direction: column;
         gap: 10px;
-        padding: 20px 15px 15px 15px;
+        padding: 15px;
+        padding-top: 15px;
         border-radius: 15px;
         overflow-x: hidden;
-        margin-top: 15px;
+        margin-top: 20px;
     }
 
     #shoppingList .product {
@@ -356,6 +365,7 @@
         justify-content: space-between;
         align-items: center;
         margin: 0px;
+        height: 40px;
         padding: 10px;
         border-radius: 15px;
         color: white;
@@ -377,7 +387,7 @@
 
     #checkout {
         width: 100%;
-        height: 310px;
+        height: 350px;
         border-radius: 15px;
         padding: 15px;
         background-color: rgb(234, 234, 234);
@@ -393,7 +403,7 @@
 
     #totalValue {
         width: 90%;
-        height: 100px;
+        height: 80px;
         border: 2px solid black;
         border-radius: 15px;
         margin: auto;
@@ -404,13 +414,14 @@
 
     #searchBar {
         width: 100%;
-        height: 250px;
+        height: 300px;
         border-radius: 15px;
         padding: 15px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         background-color: rgb(234, 234, 234);
+        margin-top: 20px;
     }
 
     #searchBar input {
@@ -429,7 +440,7 @@
     #searchResult p {
         color: white;
         background-color: rgb(19, 103, 181);
-        width: 80%;
+        width: 90%;
         border-radius: 10px;
         font-size: 13px;
         text-align: left;
@@ -448,15 +459,15 @@
         position: fixed;
         top: 0px;
         left: 0px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     #saveShoppingContainer {
         background-color: rgb(241, 242, 242);
         width: 800px;
-        height: 650px;
-        position: fixed;
-        top: 10%;
-        left: 25%;
+        height: 500px;
         border-radius: 15px;
         display: flex;
         justify-content: space-around;
@@ -503,7 +514,11 @@
     }
 
     #clientData input {
-        width: 300px;
+        width: 400px;
+    }
+
+    #clientData select {
+        width: 400px;
     }
 
     #clientData label {

@@ -293,19 +293,28 @@ const Clientes = () => {
                                     setSelectedClient({ ...selectedClient, telefone: e.target.value })
                                 }
                             />
-                            <label>Fiado (Dívida Atual: {selectedClient.divida.toFixed(2)})</label>
-                            <input
-                                type="number"
-                                className="form-control"
-                                value={selectedClient.divida}
-                                onChange={(e) =>
-                                    setSelectedClient({
-                                        ...selectedClient,
-                                        divida: parseFloat(e.target.value),
-                                    })
-                                }
-                            />
-                            <small>Insira "0" para quitar a dívida.</small>
+                            <div>
+                                <label>Fiado (Dívida Atual: R$ {(Number(selectedClient.divida) || 0).toFixed(2)}
+                            )</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    value={selectedClient.divida}
+                                    onChange={(e) => {
+                                        let value = e.target.value.replace(',', '.'); // Permitir uso de vírgula como ponto decimal
+
+                                        // Permitir que o campo fique vazio sem erro
+                                        if (value === '' || !isNaN(value)) {
+                                            setSelectedClient({ ...selectedClient, divida: value });
+                                        }
+                                    }}
+                                    onBlur={() => {
+                                        // Converte para número apenas quando o usuário sai do campo
+                                        setSelectedClient({ ...selectedClient, divida: parseFloat(selectedClient.divida) || 0 });
+                                    }}
+                                />
+
+                            </div>
                             <div className="mt-3">
                                 <button type="submit" className="btn btn-dark form-control">
                                     Salvar Alterações

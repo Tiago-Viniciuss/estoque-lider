@@ -28,6 +28,9 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   const [activeUser, setActiveUser] = useState('')
   const empresaId = localStorage.getItem('empresaId');
   const [companyName, setCompanyName] = useState('')
+  const [clientSection, setClienteSection] = useState(true)
+  const [paymentMethodSection, setPaymentMethodSection] = useState(false)
+  const [paymentAmountSection, setPaymentAmountSection] = useState(false)
 
   const Navigate = useNavigate()
 
@@ -182,6 +185,26 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
 
   const handlePaymentMethod = (e) => {
     setPaymentMethod(e.target.value)
+  }
+
+  const showPaymentMethod = () => {
+    setClienteSection(false)
+    setPaymentMethodSection(true)
+  }
+
+  const showPaymentAmount = () => {
+    setPaymentMethodSection(false)
+    setPaymentAmountSection(true)
+  }
+
+  const backPaymentMethod = () => {
+    setClienteSection(true)
+    setPaymentMethodSection(false)
+  }
+
+  const backPaymentAmount = () => {
+    setPaymentMethodSection(true)
+    setPaymentAmountSection(false)
   }
 
   const saveShopping = async (e) => {
@@ -370,7 +393,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
     if (insertedValue > paid) {
       setChangeValueModal(true)
     }
-    
+
     if (noPaid > 0) {
       setNoPaidModal(true)
     } else {
@@ -379,8 +402,25 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   }, [])
 
   const handleInsertedValue = (e) => {
-    setInsertedValue(e.target.value);
-  }
+    let value = e.target.value;
+  
+    // Permitir que o campo fique vazio sem formatar imediatamente
+    if (value === "") {
+      setInsertedValue(""); 
+      return;
+    }
+  
+    // Permitir apenas números e um único ponto decimal com até duas casas decimais
+    if (/^(\d+(\.\d{0,2})?|\.\d{0,2})$/.test(value)) {
+      // Remove zeros à esquerda, exceto quando o valor é "0" ou começa com "0."
+      if (/^0[0-9]/.test(value)) {
+        value = value.replace(/^0+/, '');
+      }
+  
+      setInsertedValue(value);
+    }
+  };
+  
 
   const handleChangeValue = () => {
     if (insertedValue.length > 0) {
@@ -510,7 +550,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
           <section id="checkout">
             <div id="totalValue">
               <strong>
-                <p>VALOR TOTAL</p><span>R${calculateTotal()}</span>
+                <span>R${calculateTotal()}</span>
               </strong>
             </div>
             <div id='extraValues'>
@@ -549,7 +589,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
             <div id='background'>
               <div id='saveShoppingContainer'>
                 <button id='closeShop' onClick={closeShoppingContainer} className='material-symbols-outlined'>close</button>
-                <div>
+                {/**<div>
                   <h2>Venda a finalizar</h2>
                   <div id='listCheck'>
                     {
@@ -560,11 +600,11 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                       ))
                     }
                   </div>
-                </div>
+                </div>**/}
                 <div>
                   <h2>Dados do Cliente</h2>
                   <form onSubmit={saveShopping} id='clientData'>
-                    <div>
+                    {clientSection &&(<div>
                       <label htmlFor="clientName">Nome do Cliente</label>
                       <input className='form-control'
                         type="text"
@@ -585,8 +625,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                           ))}
                         </ul>
                       )}
-                    </div>
-                    {clientSuggestions.length === 0 && (
+                      {clientSuggestions.length === 0 && (
                       <div>
                         <label htmlFor="clientPhone">Telefone do Cliente</label>
                         <input className='form-control'
@@ -598,44 +637,52 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                         />
                       </div>
                     )}
-
-
-                    <label htmlFor="paid">Quanto o cliente vai pagar?</label>
-                    <input className='form-control' type="text" name="paid" id="paid" value={paid || 0} onChange={handlePaid} />
-
-                    <label htmlFor="insertedValue">Qual o valor inserido?</label>
-                  <input type="number" name="insertedValue" id="insertedValue" className='form-control'
-                      value={insertedValue} onChange={handleInsertedValue} />
+                    <button  type='button' onClick={showPaymentMethod} className='btn btn-dark buttonArrow' disabled={clientName.length === 0}><span className='material-symbols-outlined'>arrow_forward</span></button>
+                    </div>)}
 
                     
-                      <p className='changeValue' onChange={handleChangeValue}> <strong><i>O troco é de R${changeValue}</i></strong></p>
-                   
+                    
 
+                    {paymentMethodSection && (<div>
                       <label htmlFor="paymentMethod">Qual a forma de pagamento?</label>
-                    <select name="paymentMethod" id="paymentMethod" className='form-control' onChange={handlePaymentMethod} required value={paymentMethod}>
-                      <optgroup>
-                        <option value="" disabled>-- Selecione aqui --</option>
-                        <option value="Dinheiro">Dinheiro</option>
-                        <option value="Pix">Pix</option>
-                        <option value="A Prazo">A Prazo</option>
-                        <option value="Cartão">Cartão</option>
-                      </optgroup>
-                    </select>
-                   
+                      <select name="paymentMethod" id="paymentMethod" className='form-control' onChange={handlePaymentMethod} required value={paymentMethod}>
+                        <optgroup>
+                          <option value="" disabled>-- Selecione aqui --</option>
+                          <option value="Dinheiro">Dinheiro</option>
+                          <option value="Pix">Pix</option>
+                          <option value="A Prazo">A Prazo</option>
+                          <option value="Cartão">Cartão</option>
+                        </optgroup>
+                      </select>
+                      <button  type='button' onClick={showPaymentAmount} className='btn btn-dark buttonArrow' disabled={paymentMethod.length === 0}><span className='material-symbols-outlined'>arrow_forward</span></button>
+                      <button  type='button' onClick={backPaymentMethod} className='btn btn-secondary buttonArrowBack'><span className='material-symbols-outlined'>arrow_back_ios</span></button>
+                    </div>
+                  
+                  )}
+
+                    {paymentAmountSection && (
+                      <div>
+                        <label htmlFor="paid">Quanto o cliente vai pagar?</label>
+                        <input className='form-control' type="text" name="paid" id="paid" value={paid || 0} onChange={handlePaid} />
+                        <label htmlFor="insertedValue">Qual o valor inserido?</label>
+                        <input type="number" name="insertedValue" id="insertedValue" className='form-control'
+                          value={insertedValue} onChange={handleInsertedValue} disabled={paymentMethod.length === 0}/>
+                        <p className='changeValue' onChange={handleChangeValue}> <strong><i>O troco é de R${(changeValue.toFixed(2))}</i></strong></p>
                         <div>
                           <label htmlFor="noPaid">O fiado será:</label>
                           <input
                             type="text"
                             name="noPaid"
-                            value={noPaid || 0} readOnly
+                            value={(parseFloat(noPaid) || 0).toFixed(2)
+                            } readOnly
                             className="form-control"
                           />
-                        </div>
-                      
-                    <br />
+                          <br />
                     <p id='calculateTotal'>Total: R${calculateTotal()}</p> <br />
-
-                    <button className="btn btn-dark" type="submit">Finalizar Venda</button>
+                        </div>
+                        <button className="btn btn-dark" type="submit" disabled={!(parseFloat(paid) > 0 || parseFloat(noPaid) > 0)}>Finalizar Venda</button> 
+                        <button  type='button' onClick={backPaymentAmount} className='btn btn-secondary buttonArrowBack'><span className='material-symbols-outlined'>arrow_back_ios</span></button>
+                      </div>)}
                   </form>
                 </div>
               </div>

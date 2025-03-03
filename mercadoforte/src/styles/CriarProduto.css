@@ -1,6 +1,7 @@
 #createProduct {
     width: 90%;
     margin: auto;
+    padding-top: 55px;
 }
 
 #createProduct  button {
@@ -20,6 +21,24 @@
     margin-top: 15px;
 }
 
+
+#profitMarginSection {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+}
+
+#profitMarginSection span {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#profitMargin {
+    width: 55px;
+}
+
 @media screen and (min-width: 600px) {
     #createProduct {
         width: 700px;
@@ -30,4 +49,7 @@
         margin-top: 15px;
     }
     
+    #profitMargin {
+        width: 70px;
+    }
 }

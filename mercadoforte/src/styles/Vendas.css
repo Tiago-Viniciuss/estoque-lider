@@ -2,25 +2,30 @@
     width: 350px;
     margin: auto;  
     padding-bottom: 150px;
+    padding-top: 55px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
 }
 
 #clientFilter {
-    width: 300px;
     margin: auto;
     display: flex;
     gap: 10px;
     justify-content: start;
     align-items: center;
+    font-size: 12px;
 }
 
 #clientFilter input {
     width: 200px;
     display: inline;
     margin-left: 10px;
+    font-size: 12px;
 }
 
 #dateFilter {
-    width: 300px;
     margin: auto;
     display: flex;
     gap: 10px;
@@ -28,19 +33,24 @@
     align-items: center;
     margin-top: 5px;
     margin-bottom: 30px;
+    font-size: 12px;
 }
 
 #dateFilter select {
     width: 200px;
     color: rgb(97, 97, 97);
+    font-size: 12px;
 }
 
 #salesNumbers {
     position: fixed;
-    bottom: 50px;
-    left: 40px;
-    background-color: white;
+    bottom: 0px;
+    left: 0px;
+    background-color: var(--secondary-color);
+    color: white;
     width: 100%;
+    border-top: 2px solid rgba(71, 70, 70, 0.693);
+    padding-top: 10px;
 }
 
 #modal {
@@ -84,6 +94,7 @@
     background-color: rgb(233, 233, 233);
     border: none;
     border-radius: 15px;
+    overflow-x: hidden;
 }
 
 ul {
@@ -99,6 +110,7 @@ ul li {
     cursor: pointer;
     text-align: left;
     display: flex;
+    flex-direction: column;
     justify-content: space-between;
 }
 
@@ -154,7 +166,7 @@ ul li:hover {
     #salesNumbers {
         position: fixed;
         bottom: 60px;
-        left: 40px;
+        left: 0px;
         width: 100%;
     }
     

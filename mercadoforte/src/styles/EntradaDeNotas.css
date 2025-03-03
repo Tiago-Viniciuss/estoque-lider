@@ -6,6 +6,7 @@
   width: 360px;
   height: 100%;
   padding: 20px;
+  padding-top: 55px;
   gap: 10px;
   margin: auto;
 }
@@ -56,6 +57,7 @@
     width: 800px;
     height: 100%;
     padding: 20px;
+    padding-top: 25px;
     gap: 10px;
     margin: auto;
 }

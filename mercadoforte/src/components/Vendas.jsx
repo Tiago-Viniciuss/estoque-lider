@@ -200,16 +200,17 @@ const Vendas = () => {
                 </select>
             </div>
             <div id='salesNumbers'>
-                <p><strong>Total de Vendas:</strong> R$ {Number(salesValue).toFixed(2)}</p>
-                <p><strong>Total de Fiado:</strong> R$ {fiadoValue.toFixed(2)}</p>
-                <p><strong>Total Pago:</strong> R${Number(salesValue)- fiadoValue}</p>
+                <p><strong>Total de Vendas:</strong> R$ {Number(salesValue).toFixed(2).replace('.', ',')}</p>
+                <p><strong>Total de Fiado:</strong> R$ {fiadoValue.toFixed(2).replace('.', ',')}</p>
+                <p><strong>Total Pago:</strong> R${(Number(salesValue) - Number(fiadoValue)).toFixed(2).replace('.', ',')}</p>
+
             </div>
             <ul>
                 {filteredSales.map((sale) => (
                     <li className='individualSale' key={sale.id} onClick={() => openSaleDetails(sale)}>
-                        <span><strong>Cliente:</strong> {sale.Cliente.nome}{' '}</span>
-                        <span>ID: {sale.id} </span>
-                        <span><strong>Total:</strong> R${sale.TotalVenda.toFixed(2)}</span>
+                        <span><strong>{sale.Cliente.nome}</strong>{' '}</span>
+                        <span><strong>R${sale.TotalVenda.toFixed(2)}</strong> </span>
+                        <span><strong><i>ID</i></strong>: {sale.id} </span>
                     </li>
                 ))}
             </ul>
@@ -228,7 +229,7 @@ const Vendas = () => {
                         <p><strong>Data:</strong> {new Date(selectedSale.Data.seconds * 1000).toLocaleString()}</p>
                         <p><strong>Total:</strong> R${selectedSale.TotalVenda.toFixed(2)}</p>
                         <p><strong>Pago:</strong> R${selectedSale.Pago|| ''}</p>
-                        <p><strong>Fiado:</strong> R${selectedSale.Fiado|| ''}</p>
+                        <p><strong>Fiado:</strong> R${(selectedSale.Fiado.toFixed(2))|| ''}</p>
                         <p>
                             <strong>Forma de Pagamento:</strong> {
                                 selectedSale.FormaPagamento

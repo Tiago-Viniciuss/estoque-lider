@@ -8,11 +8,64 @@ const EditarProdutos = () => {
     const [productsList, setProductsList] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState(null);
+    const [costPrice, setCostPrice] = useState('');
+    const [profitMargin, setProfitMargin] = useState(30);
+    const [productPrice, setProductPrice] = useState('');
     const [editingList, setEditingList] = useState(true);
     const [editingTool, setEditingTool] = useState(false);
     const [filterCategory, setFilterCategory] = useState('Todos');
     const [loading, setLoading] = useState(false)
+    const [manualPriceEdit, setManualPriceEdit] = useState(false);
     const empresaId = localStorage.getItem('empresaId');
+
+    useEffect(() => {
+        if (!manualPriceEdit && selectedProduct) {
+            // Verifique se precoCusto é um número válido
+            const cost = parseFloat(selectedProduct.precoCusto);
+            const margin = parseFloat(profitMargin);
+
+            // Verifique se ambos são números válidos
+            if (!isNaN(cost) && !isNaN(margin)) {
+                const suggestedPrice = cost + (cost * margin / 100);
+                setProductPrice(suggestedPrice.toFixed(2)); // Mantém 2 casas decimais
+            } else {
+                setProductPrice(''); // Caso algum valor seja inválido, deixe o campo vazio
+            }
+        }
+    }, [selectedProduct, profitMargin, manualPriceEdit]);
+
+
+    const handleCostPriceChange = (e) => {
+        const value = e.target.value;
+        setCostPrice(value);
+
+        // Verifique se o valor é um número válido
+        const cost = parseFloat(value);
+        if (isNaN(cost)) {
+            setProductPrice(''); // Se o valor for inválido, limpa o preço sugerido
+        } else {
+            setManualPriceEdit(false); // Se o usuário altera o preço de custo, recalcula automaticamente
+        }
+    };
+
+    const handleProfitMarginChange = (e) => {
+        const value = e.target.value;
+        setProfitMargin(value);
+
+        // Verifique se o valor é um número válido
+        const margin = parseFloat(value);
+        if (isNaN(margin)) {
+            setProductPrice(''); // Se o valor for inválido, limpa o preço sugerido
+        } else {
+            setManualPriceEdit(false); // Se o usuário altera a margem de lucro, recalcula automaticamente
+        }
+    };
+
+
+    const handleProductPriceChange = (e) => {
+        setProductPrice(e.target.value);
+        setManualPriceEdit(true); // Se o usuário edita manualmente, não recalcula automaticamente
+    };
 
     const fetchProducts = async () => {
         setLoading(true)
@@ -38,7 +91,7 @@ const EditarProdutos = () => {
     }, []);
 
     // Handle category filter
-    
+
     const handleFilter = (category) => {
         setFilterCategory(category);
         if (category === 'Todos') {
@@ -77,11 +130,11 @@ const EditarProdutos = () => {
             return;
         }
 
-       
-        
+
+
 
         const formData = new FormData(event.target);
-        
+
         const keywords = generateKeywords(formData.get('productName'));
 
         const updatedProduct = {
@@ -93,6 +146,8 @@ const EditarProdutos = () => {
             codigo: formData.get('productCode'),
             keywords: keywords,
             keywordsMinusculo: keywords.map((keyword) => keyword.toLowerCase()),
+            margemLucro: profitMargin,
+            precoCusto: Number(costPrice),
         };
 
         try {
@@ -115,7 +170,7 @@ const EditarProdutos = () => {
     return (
         <div id='productsContainer'>
             <menu id="chooseCategory">
-                {['alimentos', 'bebidas', 'higiene', 'limpeza', 'utilidades', 'botijão','Todos'].map((category) => (
+                {['alimentos', 'bebidas', 'higiene', 'limpeza', 'utilidades', 'botijão', 'Todos'].map((category) => (
                     <button
                         key={category}
                         onClick={() => handleFilter(category)}
@@ -153,7 +208,7 @@ const EditarProdutos = () => {
                                     <td style={{ color: product.estoque < 10 ? 'red' : 'black' }} className='editProduct'>{product.codigo}</td>
                                     <td style={{ color: product.estoque < 10 ? 'red' : 'black' }}>{product.preco}</td>
                                     <td style={{ color: product.estoque < 10 ? 'red' : 'black' }} className='editProduct'>
-                                        {product.estoque} <span onClick={() => handleEdit(product)}  className='material-symbols-outlined'>edit</span></td>
+                                        {product.estoque} <span onClick={() => handleEdit(product)} className='material-symbols-outlined'>edit</span></td>
                                 </tr>
                             ))}
                         </tbody>
@@ -162,7 +217,7 @@ const EditarProdutos = () => {
 
                 {editingTool && selectedProduct && (
                     <form id="editingTool" onSubmit={handleUpdateProduct}>
-                        <span onClick={ handleCloseEdit}  className='material-symbols-outlined'>close</span>
+                        <span onClick={handleCloseEdit} className='material-symbols-outlined'>close</span>
                         <label htmlFor="productCategory">Categoria do Produto</label>
                         <select
                             name="productCategory"
@@ -189,6 +244,38 @@ const EditarProdutos = () => {
                             defaultValue={selectedProduct.nome}
                             className="form-control"
                         />
+
+                        <label htmlFor="CostPrice">Preço de Custo</label>
+                        <input
+                            type="number"
+                            id="CostPrice"
+                            className="form-control"
+                            defaultValue={selectedProduct.precoCusto}
+                            onChange={handleCostPriceChange}
+                            min="0" // Adiciona um limite mínimo, caso deseje
+                            step="0.01" // Permite decimais
+                        />
+
+                        <label htmlFor="profitMargin">Margem de Lucro (%)</label>
+                        <input
+                            type="number"
+                            id="profitMargin"
+                            className="form-control"
+                            value={profitMargin}
+                            onChange={handleProfitMarginChange}
+                        />
+
+                        <label htmlFor="productPrice">Preço Sugerido</label>
+                        <input
+                            type="number"
+                            id="productPrice"
+                            className="form-control"
+                            value={productPrice}
+                            onChange={handleProductPriceChange}
+                            min="0" // Adiciona um limite mínimo, caso deseje
+                            step="0.01" // Permite decimais
+                        />
+
 
                         <label htmlFor="productPrice">Preço Unitário</label>
                         <input
@@ -219,7 +306,7 @@ const EditarProdutos = () => {
                             defaultValue={selectedProduct.codigo}
                             className="form-control"
                         />
-                        
+
                         <button className="btn btn-dark form-control" type="submit">
                             ATUALIZAR PRODUTO
                         </button>

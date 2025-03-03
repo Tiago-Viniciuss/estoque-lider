@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { collection, query, where, getDocs, addDoc, setDoc, doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 import FrenteCaixa from '../components/FrenteCaixa';
 import CriarProduto from '../components/CriarProduto';
 import EditarProdutos from '../components/EditarProdutos';
@@ -13,6 +15,8 @@ export const Home = () => {
 
   // Estado compartilhado para a lista de compras
   const [shoppingList, setShoppingList] = useState([]);
+  const [companyName, setCompanyName] = useState('')
+  const empresaId = localStorage.getItem('empresaId');
 
   const openMenu = () => {
     const menu = document.getElementById('backgroundMenu')
@@ -30,6 +34,33 @@ export const Home = () => {
     nav.classList.remove('active')
   }
 
+  useEffect(() => {
+    const fetchCompanyName = async () => {
+      if (empresaId) {
+        try {
+          // Se você está buscando na coleção 'Empresas' e não em 'Produtos', a referência deveria ser:
+          const empresaRef = doc(db, 'Empresas', empresaId);  // Aqui está buscando diretamente pela empresa
+          const empresaDoc = await getDoc(empresaRef);
+  
+          if (empresaDoc.exists()) {
+            setCompanyName(empresaDoc.data().nome);  // Atualiza o nome da empresa
+          } else {
+            console.log('Empresa não encontrada');
+          }
+        } catch (error) {
+          console.error('Erro ao buscar nome da empresa:', error);
+        }
+      }
+    };
+  
+    fetchCompanyName();
+  }, [empresaId]);
+
+  const logoutUser = () => { 
+    localStorage.removeItem('empresaId')
+    Navigate('/')
+  }
+
   return (
     <div id='home'>
       <h1 id='logoTitle'>
@@ -39,6 +70,9 @@ export const Home = () => {
       <header>
         <button className='material-symbols-outlined' id='openMenu' onClick={openMenu}>menu</button>
       </header>
+      <span id='companyTag'>
+        {companyName} <button id='logoutButton' className='material-symbols-outlined' onClick={logoutUser}>logout</button>
+      </span>
       <p id='logoSlogan'>Automações e Tecnologia <br />
       75 99105-7248</p>
       {activeSection === 'FrenteCaixa' && <FrenteCaixa shoppingList={shoppingList} setShoppingList={setShoppingList} />}
