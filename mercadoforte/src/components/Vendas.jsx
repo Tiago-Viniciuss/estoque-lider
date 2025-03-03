@@ -7,6 +7,7 @@ import { jsPDF } from 'jspdf'; // Importando o jsPDF
 import 'jspdf-autotable'; // Extensão para tabelas
 
 import '../styles/Vendas.css'
+import GraficoPizza from './GraficoPizza.jsx';
 
 const Vendas = () => {
     const [sales, setSales] = useState([]); // Lista de vendas
@@ -48,18 +49,18 @@ const Vendas = () => {
 
     const filterByDateRange = (days) => {
         const now = new Date();
-        if (days === 1) { 
+        if (days === 1) {
             const startOfToday = new Date(
                 now.getFullYear(),
                 now.getMonth(),
                 now.getDate(),
-                5, 0, 0 
+                5, 0, 0
             );
             const endOfToday = new Date(
                 now.getFullYear(),
                 now.getMonth(),
                 now.getDate() + 1,
-                11, 0, 0 
+                11, 0, 0
             );
 
             const filtered = sales.filter((sale) => {
@@ -67,17 +68,17 @@ const Vendas = () => {
                 return saleDate >= startOfToday && saleDate < endOfToday;
             });
             setFilteredSales(filtered);
-        } else if (days === 0) { 
+        } else if (days === 0) {
             // Filtro para ontem
             const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 5, 0, 0);
             const endOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 5, 0, 0);
-    
+
             const filtered = sales.filter((sale) => {
                 const saleDate = new Date(sale.Data.seconds * 1000);
                 return saleDate >= startOfYesterday && saleDate < endOfYesterday;
             });
-            setFilteredSales(filtered); 
-        } else { 
+            setFilteredSales(filtered);
+        } else {
             const filtered = sales.filter((sale) => {
                 const saleDate = new Date(sale.Data.seconds * 1000);
                 const diffTime = Math.abs(now - saleDate);
@@ -149,7 +150,7 @@ const Vendas = () => {
         doc.text('Mercearia Sagrada Família', 14, 10);
 
         doc.autoTable({
-            head: [['Cliente', 'Telefone', 'Data', 'Total', 'Fiado','Operador']],
+            head: [['Cliente', 'Telefone', 'Data', 'Total', 'Fiado', 'Operador']],
             body: [[
                 selectedSale.Cliente.nome,
                 selectedSale.Cliente.telefone,
@@ -193,7 +194,7 @@ const Vendas = () => {
                     onChange={(e) => setTimeFilter(Number(e.target.value))}
                 >
                     <option value={1}>Hoje (após as 05h)</option>
-                    <option value={0}>Ontem</option> 
+                    <option value={0}>Ontem</option>
                     <option value={7}>Últimos 7 dias</option>
                     <option value={15}>Últimos 15 dias</option>
                     <option value={30}>Últimos 30 dias</option>
@@ -228,8 +229,8 @@ const Vendas = () => {
                         <p><strong>Telefone:</strong> {selectedSale.Cliente.telefone}</p>
                         <p><strong>Data:</strong> {new Date(selectedSale.Data.seconds * 1000).toLocaleString()}</p>
                         <p><strong>Total:</strong> R${selectedSale.TotalVenda.toFixed(2)}</p>
-                        <p><strong>Pago:</strong> R${selectedSale.Pago|| ''}</p>
-                        <p><strong>Fiado:</strong> R${(selectedSale.Fiado.toFixed(2))|| ''}</p>
+                        <p><strong>Pago:</strong> R${selectedSale.Pago || ''}</p>
+                        <p><strong>Fiado:</strong> R${(selectedSale.Fiado.toFixed(2)) || ''}</p>
                         <p>
                             <strong>Forma de Pagamento:</strong> {
                                 selectedSale.FormaPagamento
@@ -250,6 +251,14 @@ const Vendas = () => {
                     </div>
                 </div>
             )}
+            <div id='chart'>
+                <GraficoPizza
+                    vendasPagas={salesValue - fiadoValue}
+                    vendasFiado={fiadoValue}
+                    vendasTotais={salesValue}
+                />
+            </div>
+
 
         </div>
     );
