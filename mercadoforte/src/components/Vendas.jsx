@@ -201,10 +201,9 @@ const Vendas = () => {
                 </select>
             </div>
             <div id='salesNumbers'>
+                <p><strong>Pago:</strong> R${(Number(salesValue) - Number(fiadoValue)).toFixed(2).replace('.', ',')}</p>
+                <p><strong>Fiado:</strong> R$ {fiadoValue.toFixed(2).replace('.', ',')}</p>
                 <p><strong>Total de Vendas:</strong> R$ {Number(salesValue).toFixed(2).replace('.', ',')}</p>
-                <p><strong>Total de Fiado:</strong> R$ {fiadoValue.toFixed(2).replace('.', ',')}</p>
-                <p><strong>Total Pago:</strong> R${(Number(salesValue) - Number(fiadoValue)).toFixed(2).replace('.', ',')}</p>
-
             </div>
             <ul>
                 {filteredSales.map((sale) => (

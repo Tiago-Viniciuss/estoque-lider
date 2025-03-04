@@ -136,8 +136,12 @@ ul li:hover {
 
 @media screen and (min-width: 600px) {
     #vendas {
-        width: 700px;
+        width: 900px;
         margin: auto;
+        padding-bottom: 200px;
+        display: flex;
+        justify-content: start;
+        align-items: start;
     }
     
     #clientFilter {
@@ -173,9 +177,10 @@ ul li:hover {
     
     #salesNumbers {
         position: fixed;
-        bottom: 60px;
+        bottom: 95px;
         left: 0px;
         width: 100%;
+        font-size: 12px;
     }
     
     #modal {
@@ -219,6 +224,8 @@ ul li:hover {
         background-color: rgb(233, 233, 233);
         border: none;
         border-radius: 15px;
+        font-size: 12px;
+        width: 600px;
     }
     
     ul {
@@ -249,4 +256,14 @@ ul li:hover {
     
 }
 
-
+@media screen and (min-width: 1000px) {
+    #chart {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding-bottom: 50px;
+        position: absolute;
+        right: 25px;
+        top: 50px;
+    }
+}
