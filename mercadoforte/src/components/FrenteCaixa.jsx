@@ -31,6 +31,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   const [clientSection, setClienteSection] = useState(true)
   const [paymentMethodSection, setPaymentMethodSection] = useState(false)
   const [paymentAmountSection, setPaymentAmountSection] = useState(false)
+  const endOfListRef = useRef(null);
 
   const Navigate = useNavigate()
 
@@ -131,6 +132,10 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
     setSearchTerm('');
     inputRef.current?.focus();
   };
+
+  useEffect(() => {
+    endOfListRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [shoppingList]);
 
 
   const removeFromShoppingList = (indexToRemove) => {
@@ -501,7 +506,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
         {companyName} <button id='logoutButton' className='material-symbols-outlined' onClick={logoutUser}>logout</button>
       </span>
       <main id="frenteCaixa">
-        <section id="shoppingList">
+        <section id="shoppingList" style={{ maxHeight: '550px', overflowY: 'auto' }}>
           {shoppingList.map((product, index) => (
             <p className="product" key={index}>
               {product.nome} - {product.quantity} {product.nome === 'farinha' || product.nome === 'calabresa sadia kg' ? 'kg' : 'un'}
@@ -516,6 +521,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
               </span>
             </p>
           ))}
+          <div ref={endOfListRef} />
         </section>
         <div id="secondContainer">
           <section id="searchBar">

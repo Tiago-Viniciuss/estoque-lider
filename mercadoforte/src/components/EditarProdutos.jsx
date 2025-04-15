@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, setDoc, getDocs, collection } from 'firebase/firestore';
+import { doc, setDoc, getDocs, collection, deleteDoc, query, where } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import LoadingSpinner from '../components/LoadingSpinner.jsx'
 import '../styles/EditarProdutos.css'
@@ -16,7 +16,9 @@ const EditarProdutos = () => {
     const [filterCategory, setFilterCategory] = useState('Todos');
     const [loading, setLoading] = useState(false)
     const [manualPriceEdit, setManualPriceEdit] = useState(false);
+    const [searchProduct, setSearchProduct] = useState('');
     const empresaId = localStorage.getItem('empresaId');
+
 
     useEffect(() => {
         if (!manualPriceEdit && selectedProduct) {
@@ -90,6 +92,18 @@ const EditarProdutos = () => {
         fetchProducts();
     }, []);
 
+
+    useEffect(() => {
+        const searchLower = searchProduct.toLowerCase();
+    
+        const filtered = productsList.filter(product =>
+            product.nome.toLowerCase().includes(searchLower)
+        );
+    
+        setFilteredProducts(filtered);
+    }, [searchProduct, productsList]);
+    
+
     // Handle category filter
 
     const handleFilter = (category) => {
@@ -130,9 +144,6 @@ const EditarProdutos = () => {
             return;
         }
 
-
-
-
         const formData = new FormData(event.target);
 
         const keywords = generateKeywords(formData.get('productName'));
@@ -161,6 +172,42 @@ const EditarProdutos = () => {
         }
     };
 
+    const handleDeleteProduct = async (productCode) => {
+        const confirmDelete = window.confirm("Tem certeza que deseja excluir este produto?");
+        if (!confirmDelete) return;
+
+        try {
+            setLoading(true);
+
+            // Buscar o documento com base no campo "codigo"
+            const querySnapshot = await getDocs(query(collection(db, "Produtos"), where("codigo", "==", productCode)));
+
+            if (querySnapshot.empty) {
+                alert("Produto não encontrado.");
+                return;
+            }
+
+            // Pega o primeiro documento encontrado e deleta
+            const productDoc = querySnapshot.docs[0];
+            await deleteDoc(doc(db, "Produtos", productDoc.id));
+
+            alert("Produto deletado com sucesso!");
+
+            // Atualiza a lista sem precisar refazer a busca no Firestore
+            setProductsList((prev) => prev.filter(product => product.codigo !== productCode));
+            setFilteredProducts((prev) => prev.filter(product => product.codigo !== productCode));
+            setEditingTool(false)
+            setEditingList(true)
+        } catch (error) {
+            console.error(`Erro ao deletar produto com código ${productCode}:`, error);
+            alert("Erro ao deletar produto. Tente novamente.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+
     if (loading) {
         return (<LoadingSpinner />
 
@@ -186,6 +233,13 @@ const EditarProdutos = () => {
                     </button>
                 ))}
             </menu>
+
+            <input id="searchProductInput"
+                type="text"
+                placeholder="Buscar produto..."
+                value={searchProduct}
+                onChange={(e) => setSearchProduct(e.target.value)} className='form-control'
+            />
 
             <section id="productsEditing">
                 {editingList && (
@@ -305,7 +359,19 @@ const EditarProdutos = () => {
                             id="productCode"
                             defaultValue={selectedProduct.codigo}
                             className="form-control"
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault(); // Impede que o ENTER seja processado
+                                    console.log("Código lido:", productCode); // Exibe o código no console
+                                    // Aqui você pode chamar outra função, como enviar o código para um banco de dados
+                                }
+                            }}
                         />
+
+                        <button onClick={() => handleDeleteProduct(selectedProduct.codigo)} className="btn btn-danger form-control">
+                            Deletar
+                        </button>
+
 
                         <button className="btn btn-dark form-control" type="submit">
                             ATUALIZAR PRODUTO

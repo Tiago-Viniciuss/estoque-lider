@@ -1,5 +1,5 @@
 #clientes {
-    padding-top: 55px;
+    padding-top: 45px;
     padding-bottom: 40px;
 }
 
@@ -36,11 +36,41 @@
     font-size: 8px;
 }
 
+
 #filterName {
     width: 200px;
     display: inline;
     margin-left: 10px;
     font-size: 12px;
+}
+
+#clietsList .actions {
+    display: flex;
+    justify-content: space-around;
+    border: none;
+}
+
+#deleteClient {
+    border: none;
+}
+
+#deleteClient span {
+    border: none;
+    font-size: 16px;
+}
+
+#payBill {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+}
+
+#payBill span {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 15px;
 }
 
 #paymentModal {
@@ -172,6 +202,10 @@
 }
 
 @media screen and (min-width: 600px) {
+
+    #clientes {
+        padding-bottom: 150px;
+    }
    
     #clientsList {
         width: 700px;
