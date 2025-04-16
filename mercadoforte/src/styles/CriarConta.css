@@ -1,0 +1,38 @@
+#createAccount {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#createAccount form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    background-color: rgb(228, 226, 226);
+    width: 320px;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+#createAccount form input {
+    width: 280px;
+}
+
+#createAccount form select {
+    width: 280px;
+}
+
+#createAccount form button {
+    width: 280px;
+    background-color: #0050BC;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}

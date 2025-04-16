@@ -47,26 +47,30 @@ const Login = () => {
 
     return (
         <main id='loginPage'>
-            <h1>Mercado Forte</h1>
+
             <form onSubmit={handleLogin}>
-                <input 
-                    type="text" 
-                    className='form-control' 
-                    placeholder='Informe o telefone' 
-                    value={inputPhone} 
+                <img id='loginImg' src={'/images/cart2.png'} alt="" />
+                <h1>Mercado Forte</h1>
+                <input
+                    type="text"
+                    className='form-control'
+                    placeholder='Informe o telefone'
+                    value={inputPhone}
                     onChange={(e) => setInputPhone(e.target.value)}
                 />
-                <input 
-                    type="password" 
-                    className='form-control' 
-                    placeholder='Digite a senha' 
-                    value={inputPassword} 
+                <input
+                    type="password"
+                    className='form-control'
+                    placeholder='Digite a senha'
+                    value={inputPassword}
                     onChange={(e) => setInputPassword(e.target.value)}
                 />
                 {loginError && <p className='error-message'>*Usuário ou senha inválido</p>}
                 <button className='btn btn-dark form-control' type='submit'>Entrar</button>
+                
+                <Link to={'/criar-conta'}>Não tem uma conta? Crie agora</Link>
             </form>
-            <Link to={'/criar-conta'}>Criar conta</Link>
+            
         </main>
     );
 };

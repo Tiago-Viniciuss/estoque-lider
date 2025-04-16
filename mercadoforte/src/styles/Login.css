@@ -1,10 +1,44 @@
 #loginPage {
-    width: 70%;
+    width: 100%;
     margin: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
 }
 
 #loginPage form {
     display: flex;
     flex-direction: column;
     gap: 15px;
+    background-color: rgb(228, 226, 226);
+    width: 280px;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+#loginImg {
+    width: 75px;
+    height: 75px;
+    margin: auto;
+}
+
+.error-message {
+    color: red;
+    font-size: 12px;
+}
+
+#loginPage a {
+    font-size: 14px;
+}
+
+#loginPage form button {
+    width: 240px;
+    background-color: #0050BC;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
 }

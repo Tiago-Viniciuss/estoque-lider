@@ -326,6 +326,9 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
       setNoPaid(0)
       setChangeValue(0)
       setInsertedValue(0)
+      setClienteSection(true)
+      setPaymentMethodSection(false)
+      setPaymentAmountSection(false)
     } catch (error) {
       console.error('Erro ao salvar a venda ou criar cliente:', error);
     } finally {

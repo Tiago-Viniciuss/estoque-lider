@@ -60,7 +60,7 @@
 #menuNavigation {
     position: fixed;
     left: 0px;
-    bottom: 0px;
+    top: -10px;
     display: flex;
     flex-direction: column;
     justify-content: left;
