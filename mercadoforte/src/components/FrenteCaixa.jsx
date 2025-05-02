@@ -724,9 +724,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
 
                     {paymentAmountSection && (
                       <div>
-
-                        {
-                          cashPayment && (
+                        {cashPayment && (
                             <div>
                               <label htmlFor="paid">Quanto o cliente vai pagar em dinheiro?</label>
                               <input
@@ -736,11 +734,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                               />
                             </div>
                           )
-
                         }
-
-
-
                         {pixPayment && (
                           <div>
                             <label htmlFor="pixPayment">Quanto o cliente vai pagar em PIX?</label>
@@ -751,9 +745,6 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                             />
                           </div>
                         )}
-
-
-
                         <label htmlFor="insertedValue">Qual o valor inserido?</label>
                         <input type="number" name="insertedValue" id="insertedValue" className='form-control'
                           value={insertedValue} onChange={handleInsertedValue} disabled={paymentMethod.length === 0} />
