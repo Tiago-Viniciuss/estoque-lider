@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, getDocs, updateDoc, doc, setDoc, onSnapshot, deleteDoc } from 'firebase/firestore';
+import { collection, query, getDocs, updateDoc, doc, setDoc, onSnapshot, deleteDoc, Timestamp, addDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import LoadingSpinner from './LoadingSpinner';
 import '../styles/Clientes.css';
@@ -23,6 +23,8 @@ const Clientes = () => {
     const [totalPayment, setTotalPayment] = useState(0);
     const [partialPayment, setPartialPayment] = useState(0);
     const empresaId = localStorage.getItem('empresaId');
+    const [paymentMethod, setPaymentMethod] = useState("");
+
 
 
     const openEditingModal = (client) => {
@@ -228,18 +230,31 @@ const Clientes = () => {
 
     const handlePayment = async () => {
         setPaymentModal(true);
-        if (!selectedClient || payment <= 0) {
-            alert("Insira um valor válido para pagamento.");
+        if (!selectedClient || payment <= 0 || !paymentMethod) {
+            alert("Insira um valor válido e selecione a forma de pagamento.");
             return;
         }
-
+    
         const clientRef = doc(db, `Empresas/${empresaId}/Clientes`, selectedClient.nome);
         const newDebt = Math.max(selectedClient.divida - payment, 0);
-
+    
         try {
+            // Atualiza a dívida do cliente
             await updateDoc(clientRef, { divida: newDebt });
+    
+            // Adiciona registro do pagamento à coleção Pagamentos
+            const pagamentosRef = collection(db, `Empresas/${empresaId}/Pagamentos`);
+            await addDoc(pagamentosRef, {
+                cliente: selectedClient.nome,
+                valor: payment,
+                data: Timestamp.now(),
+                tipo: "Fiado",
+                formaPagamento: paymentMethod // dinheiro ou pix
+            });
+    
             alert(`Pagamento de R$ ${payment.toFixed(2)} realizado com sucesso! Nova dívida: R$ ${newDebt.toFixed(2)}`);
             setPayment(0);
+            setPaymentMethod(""); // Resetar forma de pagamento se desejar
             setPaymentModal(false);
             fetchClients(); // Atualiza os dados
         } catch (error) {
@@ -347,34 +362,38 @@ const Clientes = () => {
                 </div>
             )*/}
             {paymentModal && selectedClient && (
-                <div id="paymentModal">
-                    <div id="paymentBody">
-                        <h3>Pagar dívida de {selectedClient.nome}</h3>
-                        <p>Dívida atual: R$ {selectedClient.divida.toFixed(2)}</p>
-                        <input
-                            type="text"
-                            value={payment}
-                            onChange={(e) => {
-                                let value = e.target.value.replace(',', '.'); // Permitir vírgula como ponto decimal
+    <div id="paymentModal">
+        <div id="paymentBody">
+            <h3>Pagar dívida de {selectedClient.nome}</h3>
+            <p>Dívida atual: R$ {selectedClient.divida.toFixed(2)}</p>
 
-                                // Excluir 0 inicial e não permitir valores inválidos
-                                if (value === '' || !isNaN(value)) {
-                                    // Atualiza a dívida no estado, mantendo o formato correto
-                                    setPayment(value);
-                                }
-                            }}
-                            onBlur={() => {
-                                // Converte para número quando o campo perde foco e valida a dívida
-                                setPayment(parseFloat(payment.replace(',', '.')) || 0);
-                            }}
-                            placeholder="Digite o valor do pagamento"
-                        />
+            <input
+                type="text"
+                value={payment}
+                onChange={(e) => {
+                    let value = e.target.value.replace(',', '.');
+                    if (value === '' || !isNaN(value)) {
+                        setPayment(value);
+                    }
+                }}
+                onBlur={() => {
+                    setPayment(parseFloat(payment.replace(',', '.')) || 0);
+                }}
+                placeholder="Digite o valor do pagamento"
+            />
 
-                        <button onClick={handlePayment}>Confirmar Pagamento</button>
-                        <button onClick={() => setPaymentModal(false)}>Cancelar</button>
-                    </div>
-                </div>
-            )}
+            <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+                <option value="">Selecione a forma de pagamento</option>
+                <option value="dinheiro">Dinheiro</option>
+                <option value="pix">Pix</option>
+            </select>
+
+            <button onClick={handlePayment}>Confirmar Pagamento</button>
+            <button onClick={() => setPaymentModal(false)}>Cancelar</button>
+        </div>
+    </div>
+)}
+
 
 
             {editClientModal && selectedClient && (

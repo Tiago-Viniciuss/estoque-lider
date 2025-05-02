@@ -18,6 +18,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   const [clientPhone, setClientPhone] = useState('')
   const [clientSuggestions, setClientSuggestions] = useState([]);
   const [paid, setPaid] = useState(0)
+  const [pixPaid, setPixPaid] = useState(0)
   const [noPaid, setNoPaid] = useState(0)
   const [insertedValue, setInsertedValue] = useState(0)
   const [noPaidModal, setNoPaidModal] = useState(false)
@@ -32,6 +33,8 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   const [paymentMethodSection, setPaymentMethodSection] = useState(false)
   const [paymentAmountSection, setPaymentAmountSection] = useState(false)
   const endOfListRef = useRef(null);
+  const [cashPayment, setCashPayment] = useState(false)
+  const [pixPayment, setPixPayment] = useState(false)
 
   const Navigate = useNavigate()
 
@@ -44,57 +47,57 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   const handleSearch = async (e) => {
     let term = e.target.value.trim().toLowerCase();
     setSearchTerm(term);
-  
+
     if (term === '') {
       setSearchResults([]);
       return;
     }
-  
+
     const match = term.match(/^(\d+(\.\d+)?)\*\s*(.+)$/);
     let quantity = 1;
-  
+
     if (match) {
       quantity = parseFloat(match[1]);
       term = match[3].toLowerCase();
     }
-  
+
     try {
       const productsRef = collection(db, `Empresas/${empresaId}/Produtos`);
       const codeQuery = query(productsRef, where('codigo', '==', term));
-  
+
       const codeDocs = await getDocs(codeQuery);
-  
+
       if (!codeDocs.empty) {
         // Se o código for encontrado, adiciona o produto automaticamente
         const productDoc = codeDocs.docs[0];
         const product = { ...productDoc.data(), quantity };
         addToShoppingList(product, product.quantity || 1);
-  
+
         // Limpa o campo de busca e os resultados após adicionar
         setSearchTerm('');
         setSearchResults([]);
         inputRef.current?.focus();
         return; // Finaliza a função para evitar buscas adicionais
       }
-  
+
       // Caso o código não seja encontrado, continua a busca por nome ou keywords
       const nameQuery = query(productsRef, where('nome', '>=', term), where('nome', '<=', term + '\uf8ff'));
       const keywordQuery = query(productsRef, where('keywords', 'array-contains', term));
-  
+
       const nameDocs = await getDocs(nameQuery);
       const keywordDocs = await getDocs(keywordQuery);
-  
+
       const results = [];
       nameDocs.forEach((doc) => results.push(doc.data()));
       keywordDocs.forEach((doc) => results.push(doc.data()));
-  
+
       const formattedResults = results.map((result) => ({ ...result, quantity }));
       setSearchResults(formattedResults);
     } catch (error) {
       console.error('Erro ao buscar produtos:', error);
     }
   };
-  
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && searchResults.length > 0) {
       const product = searchResults[0];
@@ -133,7 +136,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
         quantity,
       }]);
     });
-  
+
     setSearchResults([]);
     setSearchTerm('');
     inputRef.current?.focus();
@@ -204,8 +207,23 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   }
 
   const showPaymentAmount = () => {
-    setPaymentMethodSection(false)
-    setPaymentAmountSection(true)
+    if (paymentMethod === 'Dinheiro') {
+      setPaymentMethodSection(false)
+      setPaymentAmountSection(true)
+      setCashPayment(true)
+      setPixPayment(false)
+    } else if (paymentMethod === 'Pix') {
+      setPaymentMethodSection(false)
+      setPaymentAmountSection(true)
+      setCashPayment(false)
+      setPixPayment(true)
+    } else if (paymentMethod === 'DinheiroPix') {
+      setPaymentMethodSection(false)
+      setPaymentAmountSection(true)
+      setCashPayment(true)
+      setPixPayment(true)
+    }
+
   }
 
   const backPaymentMethod = () => {
@@ -221,17 +239,17 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   const saveShopping = async (e) => {
     e.preventDefault();
     setLoading(true)
-    
+
     try {
 
       const empresaId = localStorage.getItem('empresaId'); // Supondo que já esteja salvo no localStorage
 
-    if (!empresaId) {
-      console.error("Nenhuma empresa logada.");
-      setLoading(false);
-      return;
+      if (!empresaId) {
+        console.error("Nenhuma empresa logada.");
+        setLoading(false);
+        return;
 
-    }
+      }
       const clientesRef = collection(db, `Empresas/${empresaId}/Clientes`);
 
       // Verifica se o cliente já existe
@@ -270,8 +288,10 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
 
 
       const finalTotal = calculateTotal();
-      const Pago1 = paid;
-      const Pago = Pago1
+      const PagoDinheiro = parseFloat(paid) || 0;
+      const PagoPix = parseFloat(pixPaid) || 0;
+      const PagoTotal = PagoDinheiro + PagoPix;
+
 
       const newTotalGasto = totalGasto + parseFloat(finalTotal);
 
@@ -299,10 +319,13 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
         },
         Operador: activeUser,
         Data: new Date(),
-        Pago: Pago,
+        PagoDinheiro: PagoDinheiro,
+        PagoPix: PagoPix,
+        PagoTotal: PagoTotal,
         Fiado: parseFloat(noPaid),
-        FormaPagamento: paymentMethod
+        FormaPagamento: paymentMethod,
       });
+
 
       // Atualiza o estoque dos produtos
       for (const product of shoppingList) {
@@ -388,31 +411,38 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   };
 
 
-  const handlePaid = (e) => {
+  const handlePaymentChange = (e, setValue, otherValue) => {
     let value = e.target.value;
 
-    // Permitir que o campo fique vazio sem formatar imediatamente
     if (value === "") {
-      setPaid(""); // Deixa 'paid' vazio
-      setNoPaid(calculateTotal()); // Atualiza 'noPaid' com o total
+      setValue("");
+      updateRemaining(
+        setValue === setPaid ? "" : otherValue,
+        setValue === setPixPaid ? "" : otherValue
+      );
       return;
     }
 
-    // Permitir apenas números e um único ponto decimal com até duas casas decimais
     if (/^(\d+(\.\d{0,2})?|\.\d{0,2})$/.test(value)) {
-      // Remove zeros à esquerda, exceto quando o valor é "0" ou começa com "0."
       if (/^0[0-9]/.test(value)) {
         value = value.replace(/^0+/, '');
       }
 
-      const paidValue = parseFloat(value) || 0; // Converte para número
-      setPaid(value); // Atualiza o estado de 'paid' sem forçar o formato
-      setNoPaid((calculateTotal() - paidValue)); // Calcula o valor restante
+      setValue(value);
+      updateRemaining(
+        setValue === setPaid ? value : otherValue,
+        setValue === setPixPaid ? value : otherValue
+      );
     }
   };
 
+
+  const handlePixPaid = (e) => handlePaymentChange(e, setPixPaid);
+  const handlePaid = (e) => handlePaymentChange(e, setPaid);
+
+
   useEffect(() => {
-    if (insertedValue > paid) {
+    if (insertedValue > paid || insertedValue > pixPaid) {
       setChangeValueModal(true)
     }
 
@@ -425,24 +455,24 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
 
   const handleInsertedValue = (e) => {
     let value = e.target.value;
-  
+
     // Permitir que o campo fique vazio sem formatar imediatamente
     if (value === "") {
-      setInsertedValue(""); 
+      setInsertedValue("");
       return;
     }
-  
+
     // Permitir apenas números e um único ponto decimal com até duas casas decimais
     if (/^(\d+(\.\d{0,2})?|\.\d{0,2})$/.test(value)) {
       // Remove zeros à esquerda, exceto quando o valor é "0" ou começa com "0."
       if (/^0[0-9]/.test(value)) {
         value = value.replace(/^0+/, '');
       }
-  
+
       setInsertedValue(value);
     }
   };
-  
+
 
   const handleChangeValue = () => {
     if (insertedValue.length > 0) {
@@ -473,7 +503,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   }, [shoppingList]);
 
 
-  const logoutUser = () => { 
+  const logoutUser = () => {
     localStorage.removeItem('empresaId')
     Navigate('/')
   }
@@ -486,7 +516,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
           // Se você está buscando na coleção 'Empresas' e não em 'Produtos', a referência deveria ser:
           const empresaRef = doc(db, 'Empresas', empresaId);  // Aqui está buscando diretamente pela empresa
           const empresaDoc = await getDoc(empresaRef);
-  
+
           if (empresaDoc.exists()) {
             setCompanyName(empresaDoc.data().nome);  // Atualiza o nome da empresa
           } else {
@@ -497,10 +527,19 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
         }
       }
     };
-  
+
     fetchCompanyName();
   }, [empresaId]);
-  
+
+  const updateRemaining = (cash, pix) => {
+    const total = calculateTotal();
+    const cashValue = parseFloat(cash) || 0;
+    const pixValue = parseFloat(pix) || 0;
+
+    const remaining = total - (cashValue + pixValue);
+    setNoPaid(remaining);
+  };
+
 
 
   if (loading) {
@@ -518,7 +557,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
           <button className='material-symbols-outlined' onClick={logoutUser}>logout</button>
         </span>
       </span>**/}
-      
+
       <span id='companyTag'>
         {companyName} <button id='logoutButton' className='material-symbols-outlined' onClick={logoutUser}>logout</button>
       </span>
@@ -627,7 +666,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                 <div>
                   <h2>Dados do Cliente</h2>
                   <form onSubmit={saveShopping} id='clientData'>
-                    {clientSection &&(<div>
+                    {clientSection && (<div>
                       <label htmlFor="clientName">Nome do Cliente</label>
                       <input className='form-control'
                         type="text"
@@ -649,22 +688,22 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                         </ul>
                       )}
                       {clientSuggestions.length === 0 && (
-                      <div>
-                        <label htmlFor="clientPhone">Telefone do Cliente</label>
-                        <input className='form-control'
-                          type="text"
-                          name="clientPhone"
-                          id="clientPhone"
-                          value={clientPhone}
-                          onChange={(e) => setClientPhone(e.target.value)} required
-                        />
-                      </div>
-                    )}
-                    <button  type='button' onClick={showPaymentMethod} className='btn btn-dark buttonArrow' disabled={clientName.length === 0}><span className='material-symbols-outlined'>arrow_forward</span></button>
+                        <div>
+                          <label htmlFor="clientPhone">Telefone do Cliente</label>
+                          <input className='form-control'
+                            type="text"
+                            name="clientPhone"
+                            id="clientPhone"
+                            value={clientPhone}
+                            onChange={(e) => setClientPhone(e.target.value)} required
+                          />
+                        </div>
+                      )}
+                      <button type='button' onClick={showPaymentMethod} className='btn btn-dark buttonArrow' disabled={clientName.length === 0}><span className='material-symbols-outlined'>arrow_forward</span></button>
                     </div>)}
 
-                    
-                    
+
+
 
                     {paymentMethodSection && (<div>
                       <label htmlFor="paymentMethod">Qual a forma de pagamento?</label>
@@ -673,23 +712,51 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                           <option value="" disabled>-- Selecione aqui --</option>
                           <option value="Dinheiro">Dinheiro</option>
                           <option value="Pix">Pix</option>
-                          <option value="A Prazo">A Prazo</option>
-                          <option value="Cartão">Cartão</option>
+                          <option value="Fiado">Fiado</option>
+                          <option value="DinheiroPix">Dinheiro / Pix</option>
                         </optgroup>
                       </select>
-                      <button  type='button' onClick={showPaymentAmount} className='btn btn-dark buttonArrow' disabled={paymentMethod.length === 0}><span className='material-symbols-outlined'>arrow_forward</span></button>
-                      <button  type='button' onClick={backPaymentMethod} className='btn btn-secondary buttonArrowBack'><span className='material-symbols-outlined'>arrow_back_ios</span></button>
+                      <button type='button' onClick={showPaymentAmount} className='btn btn-dark buttonArrow' disabled={paymentMethod.length === 0}><span className='material-symbols-outlined'>arrow_forward</span></button>
+                      <button type='button' onClick={backPaymentMethod} className='btn btn-secondary buttonArrowBack'><span className='material-symbols-outlined'>arrow_back_ios</span></button>
                     </div>
-                  
-                  )}
+
+                    )}
 
                     {paymentAmountSection && (
                       <div>
-                        <label htmlFor="paid">Quanto o cliente vai pagar?</label>
-                        <input className='form-control' type="text" name="paid" id="paid" value={paid || 0} onChange={handlePaid} />
+
+                        {
+                          cashPayment && (
+                            <div>
+                              <label htmlFor="paid">Quanto o cliente vai pagar em dinheiro?</label>
+                              <input
+                                type="text"
+                                value={paid || ""}
+                                onChange={(e) => handlePaymentChange(e, setPaid, pixPaid)}
+                              />
+                            </div>
+                          )
+
+                        }
+
+
+
+                        {pixPayment && (
+                          <div>
+                            <label htmlFor="pixPayment">Quanto o cliente vai pagar em PIX?</label>
+                            <input
+                              type="text"
+                              value={pixPaid || ""}
+                              onChange={(e) => handlePaymentChange(e, setPixPaid, paid)}
+                            />
+                          </div>
+                        )}
+
+
+
                         <label htmlFor="insertedValue">Qual o valor inserido?</label>
                         <input type="number" name="insertedValue" id="insertedValue" className='form-control'
-                          value={insertedValue} onChange={handleInsertedValue} disabled={paymentMethod.length === 0}/>
+                          value={insertedValue} onChange={handleInsertedValue} disabled={paymentMethod.length === 0} />
                         <p className='changeValue' onChange={handleChangeValue}> <strong><i>O troco é de R${(changeValue.toFixed(2))}</i></strong></p>
                         <div>
                           <label htmlFor="noPaid">O fiado será:</label>
@@ -701,10 +768,14 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                             className="form-control"
                           />
                           <br />
-                    <p id='calculateTotal'>Total: R${calculateTotal()}</p> <br />
+                          <p id='calculateTotal'>Total: R${calculateTotal()}</p> <br />
                         </div>
-                        <button className="btn btn-dark" type="submit" disabled={!(parseFloat(paid) > 0 || parseFloat(noPaid) > 0)}>Finalizar Venda</button> 
-                        <button  type='button' onClick={backPaymentAmount} className='btn btn-secondary buttonArrowBack'><span className='material-symbols-outlined'>arrow_back_ios</span></button>
+                        <button className="btn btn-dark" type="submit" disabled={!(
+                          parseFloat(paid) > 0 ||
+                          parseFloat(pixPaid) > 0 ||
+                          parseFloat(noPaid) > 0
+                        )}>Finalizar Venda</button>
+                        <button type='button' onClick={backPaymentAmount} className='btn btn-secondary buttonArrowBack'><span className='material-symbols-outlined'>arrow_back_ios</span></button>
                       </div>)}
                   </form>
                 </div>
