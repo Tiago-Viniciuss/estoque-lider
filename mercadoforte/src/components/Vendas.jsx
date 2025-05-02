@@ -5,9 +5,8 @@ import { db } from '../firebaseConfig'; // Substitua pelo caminho do seu arquivo
 import LoadingSpinner from '../components/LoadingSpinner.jsx';
 import { jsPDF } from 'jspdf'; // Importando o jsPDF
 import 'jspdf-autotable'; // Extensão para tabelas
-
+import GraficoPizza from '../components/GraficoPizza.jsx';
 import '../styles/Vendas.css'
-import GraficoPizza from './GraficoPizza.jsx';
 
 const Vendas = () => {
     const [sales, setSales] = useState([]); // Lista de vendas
@@ -19,14 +18,19 @@ const Vendas = () => {
     const [salesValue, setSalesValue] = useState('')
     const [timeFilter, setTimeFilter] = useState(1); // Por padrão, dia atual
     const [fiadoValue, setFiadoValue] = useState(0); // Total de Fiado
+    const [filterDate, setFilterDate] = useState('');
+    const [year, month, day] = filterDate.split('-');
+    const selectedDate = new Date(year, month - 1, day); // Corrige fuso (meses começam em 0)
     const empresaId = localStorage.getItem('empresaId');
+
+
 
     // Função para buscar todas as vendas
     useEffect(() => {
         setLoading(true);
         const fetchSales = async () => {
             try {
-                const salesRef = collection(db, `Empresas/${empresaId}/Vendas`);
+                const salesRef = collection(db,`Empresas/${empresaId}/Vendas`);
                 const querySnapshot = await getDocs(salesRef);
                 const salesList = [];
                 querySnapshot.forEach((doc) => {
@@ -47,6 +51,50 @@ const Vendas = () => {
         fetchSales();
     }, []);
 
+    useEffect(() => {
+        let filtered = sales;
+    
+        if (filterName.trim() !== '') {
+            filtered = filtered.filter(sale =>
+                sale.Cliente?.nome?.toLowerCase().includes(filterName.toLowerCase())
+            );
+        }
+        
+    
+        if (filterDate) {
+            const [year, month, day] = filterDate.split('-');
+            const selectedDate = new Date(year, month - 1, day);
+    
+            const startOfDay = new Date(selectedDate);
+            startOfDay.setHours(0, 0, 0, 0);
+    
+            const endOfDay = new Date(selectedDate);
+            endOfDay.setHours(23, 59, 59, 999);
+    
+            filtered = filtered.filter(sale => {
+                if (!sale.Data || typeof sale.Data.toDate !== 'function') return false;
+    
+                const saleTimestamp = sale.Data.toDate();
+                return saleTimestamp >= startOfDay && saleTimestamp <= endOfDay;
+            });
+        }
+    
+        // Ordena por data/hora decrescente
+        filtered.sort((a, b) => {
+            const dateA = a.Data?.toDate?.();
+            const dateB = b.Data?.toDate?.();
+            if (!dateA || !dateB) return 0;
+            return dateB - dateA;
+        });
+    
+        setFilteredSales(filtered);
+    }, [sales, filterName, filterDate]);
+    
+    
+    
+
+
+
     const filterByDateRange = (days) => {
         const now = new Date();
         if (days === 1) {
@@ -54,13 +102,13 @@ const Vendas = () => {
                 now.getFullYear(),
                 now.getMonth(),
                 now.getDate(),
-                5, 0, 0
+                0, 0, 0, 0
             );
             const endOfToday = new Date(
                 now.getFullYear(),
                 now.getMonth(),
                 now.getDate() + 1,
-                11, 0, 0
+                0, 0, 0, 0
             );
 
             const filtered = sales.filter((sale) => {
@@ -84,6 +132,13 @@ const Vendas = () => {
                 const diffTime = Math.abs(now - saleDate);
                 const diffDays = diffTime / (1000 * 60 * 60 * 24);
                 return diffDays <= days;
+            });
+            filtered.sort((a, b) => {
+                const dateA = a.Data?.toDate?.();
+                const dateB = b.Data?.toDate?.();
+            
+                if (!dateA || !dateB) return 0;
+                return dateB - dateA; // ordem decrescente
             });
             setFilteredSales(filtered);
         }
@@ -129,7 +184,7 @@ const Vendas = () => {
     const handleDeleteSale = async () => {
         if (selectedSale) {
             try {
-                const saleDocRef = doc(db, `Empresas/${empresaId}/Vendas`, selectedSale.id);
+                const saleDocRef = doc(db,`Empresas/${empresaId}/Vendas`, selectedSale.id);
                 await deleteDoc(saleDocRef);
                 setSales(sales.filter((sale) => sale.id !== selectedSale.id));
                 setFilteredSales(filteredSales.filter((sale) => sale.id !== selectedSale.id));
@@ -147,7 +202,7 @@ const Vendas = () => {
         if (!selectedSale) return;
 
         const doc = new jsPDF();
-        doc.text('Mercearia Sagrada Família', 14, 10);
+        doc.text('Minimercado Sagrada Família', 14, 10);
 
         doc.autoTable({
             head: [['Cliente', 'Telefone', 'Data', 'Total', 'Fiado', 'Operador']],
@@ -176,7 +231,7 @@ const Vendas = () => {
     return (
         <div id='vendas'>
             <div id='clientFilter'>
-                <label htmlFor="filterName">Filtrar por nome do cliente:</label>
+                <label htmlFor="filterName">Filtrar por nome:</label>
                 <input className='form-control'
                     type="text"
                     id="filterSale"
@@ -186,19 +241,32 @@ const Vendas = () => {
                 />
             </div>
             <div id='dateFilter'>
-                <label htmlFor="timeFilter">Filtrar por data das vendas:</label>
+                <label htmlFor="timeFilter">Filtrar por perído:</label>
                 <select
                     id="timeFilter"
                     className="form-control"
                     value={timeFilter}
                     onChange={(e) => setTimeFilter(Number(e.target.value))}
                 >
-                    <option value={1}>Hoje (após as 05h)</option>
+                    <option value={1}>Hoje</option>
                     <option value={0}>Ontem</option>
                     <option value={7}>Últimos 7 dias</option>
                     <option value={15}>Últimos 15 dias</option>
                     <option value={30}>Últimos 30 dias</option>
+                    <option value={60}>Últimos 02 meses</option>
+                    <option value={90}>Últimos 03 meses</option>
+                    <option value={180}>Últimos 06 meses</option>
+                    <option value={365}>Últimos 12 meses</option>
+                    <option value={9999}>Todos os tempos</option>
                 </select>
+            </div>
+            <div id='specificDateFilter'>
+                <label htmlFor="filterDate">Filtrar por data:</label>
+                <input
+                    type="date"
+                    value={filterDate}
+                    onChange={(e) => setFilterDate(e.target.value)} className='form-control'
+                />
             </div>
             <div id='salesNumbers'>
                 <p><strong>Pago:</strong> R${(Number(salesValue) - Number(fiadoValue)).toFixed(2).replace('.', ',')}</p>
@@ -209,12 +277,12 @@ const Vendas = () => {
                 {filteredSales.map((sale) => (
                     <li className='individualSale' key={sale.id} onClick={() => openSaleDetails(sale)}>
                         <span><strong>{sale.Cliente.nome}</strong>{' '}</span>
-                        <span><strong>R${sale.TotalVenda.toFixed(2)}</strong> </span>
+                        <span><strong>Valor: </strong>R${sale.TotalVenda.toFixed(2)}</span>
+                        <span><strong>Data: </strong>{new Date(sale.Data.seconds * 1000).toLocaleString()} </span>
                         <span><strong><i>ID</i></strong>: {sale.id} </span>
                     </li>
                 ))}
             </ul>
-
             {/* Modal com detalhes da venda */}
             {showModal && selectedSale && (
                 <div id='modal'>
@@ -223,7 +291,7 @@ const Vendas = () => {
                             close
                         </button>
                         <h2>Detalhes da Venda:</h2>
-                        {/*<p><strong>Operador:</strong>{selectedSale.Operador}</p> */}
+                        <p><strong>Operador:</strong>{selectedSale.Operador}</p>
                         <p><strong>Cliente:</strong> {selectedSale.Cliente.nome}</p>
                         <p><strong>Telefone:</strong> {selectedSale.Cliente.telefone}</p>
                         <p><strong>Data:</strong> {new Date(selectedSale.Data.seconds * 1000).toLocaleString()}</p>
@@ -257,7 +325,6 @@ const Vendas = () => {
                     vendasTotais={salesValue}
                 />
             </div>
-
 
         </div>
     );

@@ -35,6 +35,12 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
 
   const Navigate = useNavigate()
 
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
   const handleSearch = async (e) => {
     let term = e.target.value.trim().toLowerCase();
     setSearchTerm(term);
@@ -234,12 +240,14 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
 
       let clienteId = null;
       let currentDivida = 0; // Variável para armazenar o valor atual da dívida do cliente
+      let totalGasto = 0;
 
       if (!querySnapshot.empty) {
         // Cliente encontrado, utiliza o ID existente e pega o valor da dívida
         querySnapshot.forEach((doc) => {
           clienteId = doc.id;
           currentDivida = doc.data().divida || 0; // Pegando a dívida atual, ou 0 se não existir
+          totalGasto = doc.data().totalGasto || 0;
         });
       } else {
         // Cliente não encontrado, cria um novo
@@ -250,6 +258,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
           telefone: clientPhone,
           criadoEm: new Date(),
           divida: 0,
+          totalGasto: 0,
           dataUltimoPagamento: '',
         });
       }
@@ -258,17 +267,22 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
       const newDivida = currentDivida + parseFloat(noPaid);
 
       // Atualiza o cliente com o novo valor da dívida
-      await setDoc(
-        doc(clientesRef, clienteId),
-        {
-          divida: newDivida,
-        },
-        { merge: true }
-      );
+
 
       const finalTotal = calculateTotal();
       const Pago1 = paid;
       const Pago = Pago1
+
+      const newTotalGasto = totalGasto + parseFloat(finalTotal);
+
+      await setDoc(
+        doc(clientesRef, clienteId),
+        {
+          divida: newDivida,
+          totalGasto: newTotalGasto, // Atualiza total gasto
+        },
+        { merge: true }
+      );
 
       const totalItems = shoppingList.reduce((total, product) => total + product.quantity, 0);
 

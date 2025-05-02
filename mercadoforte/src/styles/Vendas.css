@@ -2,7 +2,7 @@
     width: 350px;
     margin: auto;  
     padding-bottom: 150px;
-    padding-top: 55px;
+    padding-top: 45px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -32,11 +32,28 @@
     justify-content: start;
     align-items: center;
     margin-top: 5px;
-    margin-bottom: 30px;
+    margin-bottom: 5px;
     font-size: 12px;
 }
 
 #dateFilter select {
+    width: 200px;
+    color: rgb(97, 97, 97);
+    font-size: 12px;
+}
+
+#specificDateFilter {
+    margin: auto;
+    display: flex;
+    gap: 10px;
+    justify-content: start;
+    align-items: center;
+    margin-top: 5px;
+    margin-bottom: 30px;
+    font-size: 12px;
+}
+
+#specificDateFilter input {
     width: 200px;
     color: rgb(97, 97, 97);
     font-size: 12px;
@@ -267,3 +284,5 @@ ul li:hover {
         top: 50px;
     }
 }
+
+
