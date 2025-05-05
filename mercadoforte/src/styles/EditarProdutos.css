@@ -1,222 +1,309 @@
-#productsContainer {
-    width: 100%;
-    padding: 5px;
-    padding-top: 25px;
-    margin: 0px;
+/* === Variáveis Globais (Considerar mover para um arquivo global se houver mais componentes) === */
+:root {
+    --primary-color: #007bff; /* Exemplo, ajuste conforme seu design system */
+    --secondary-color: #6c757d;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --dark-text: #343a40;
+    --light-text: #f8f9fa;
+    --border-color: #dee2e6;
+    --background-light: #f8f9fa;
+    --background-white: #fff;
+    --shadow-sm: 0 .125rem .25rem rgba(0, 0, 0, .075);
+    --border-radius: .375rem; /* 6px */
+    --spacing-xs: 5px;
+    --spacing-sm: 10px;
+    --spacing-md: 15px;
+    --spacing-lg: 25px;
+    --font-size-sm: 0.875rem; /* 14px */
+    --font-size-md: 1rem; /* 16px */
+    --font-size-lg: 1.125rem; /* 18px */
 }
 
-#searchProductInput {
-    width: 300px;
-    padding: 10px;
-    margin: 0px;
-    font-size: 16px;
-    margin: auto;
-    margin-top: 10px;
-    margin-bottom: 10px;
+/* === Estilos Base === */
+.products-container {
+    padding: var(--spacing-md);
+    max-width: 1100px; /* Limita largura em telas grandes */
+    margin: 0 auto; /* Centraliza */
 }
 
-#productsContainer #chooseCategory {
+/* === Filtro de Categoria e Busca === */
+.products-filter {
     display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    background-color: var(--background-white);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.category-filter {
+    display: flex;
+    flex-wrap: wrap; /* Permite que botões quebrem linha em telas menores */
     justify-content: center;
-    gap: 5px;
-    padding-left: 2px;
-    font-size: 8px;
+    gap: var(--spacing-xs);
 }
 
-#productsContainer #chooseCategory button {
-    border-radius: 10px;
-    font-size: 9px;
-}
-
-#productsContainer button:hover {
-    background-color: black;
-    color: white;
-}
-
-#productsEditing {
-    display: flex;
-    justify-content: center;
-    width: 350px;
-    margin: auto;
-}
-
-.priceTable {
-    width: 150px;
-}
-
-#productsList {
-    width: 300px;
-    margin: auto;
-    font-size: 14px;
-    font-weight: 500;
-    text-align: left;
-    margin: 0px;
-    margin-bottom: 25px;
-}
-
-#productsList th {
-    border: 1px solid black;
-    padding-left: 10px;
-    font-size: 10px;
-}
-
-#productsList tr {
-    border: 1px solid black;
-    font-size: 10px;
-}
-
-#productsList td {
-    border: 1px solid black;
-    padding-left: 10px;
-    font-size: 10px;
-}
-
-#productsList tbody {
-    border: 1px solid black;
-    font-size: 10px;
-}
-
-#productsList .editProduct {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: none;
-    font-size: 10px;
-}
-
-#productsList .editProduct span {
+.category-filter .btn-category {
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+    padding: 8px 12px; /* Ajuste padding */
+    border: 1px solid var(--border-color);
+    background-color: var(--background-white);
+    color: var(--dark-text);
     cursor: pointer;
-    font-size: 16px;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-#editingTool {
-    position: relative;
-    width: 330px;
-    margin-top: 25px;
-    padding: 25px;
-    border-radius: 10px;
-    background-color: var(--primary-color);
+.category-filter .btn-category.active {
+    background-color: var(--dark-text);
+    color: var(--light-text);
+    border-color: var(--dark-text);
 }
 
-#editingTool label {
-    font-size: 18px;
-    font-weight: 500;
-    margin-top: 15px;
+.category-filter .btn-category:hover:not(.active) {
+    background-color: var(--background-light);
 }
 
-#editingTool span {
-    position: absolute;
-    right: 20px;
-    top: 5px;
-    cursor: pointer;
-    font-size: 30px;
+.search-input {
+    width: 100%; /* Ocupa toda a largura disponível no container */
+    max-width: 400px; /* Limita largura máxima */
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    margin: 0 auto; /* Centraliza */
+    display: block; /* Necessário para margin auto funcionar */
 }
 
-#editingTool button {
-    margin-top: 15px;
+/* === Tabela de Produtos === */
+.products-list-section {
+    overflow-x: auto; /* Permite rolagem horizontal em telas pequenas */
+    background-color: var(--background-white);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
 }
 
-
-@media screen and (min-width: 600px) {
-
-#productsContainer {
-    position: absolute;
-    top: 0;
-    left: 0px;
+.products-table {
     width: 100%;
-    padding: 25px 0px 140px 0px;
-    background-color: var(--primary-color);
-}
-
-#productsContainer #chooseCategory {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-}
-
-#productsContainer #chooseCategory button {
-    border-radius: 10px;
-    font-size: 16px;
-}
-
-#productsContainer button:hover {
-    background-color: black;
-    color: white;
-}
-
-#productsEditing {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-}
-
-#productsList {
-    width: 700px;
-    margin: auto;
-    font-size: 18px;
-    font-weight: 500;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
     text-align: left;
 }
 
-#productsList th {
-    border: 1px solid black;
-    padding-left: 10px;
-    font-size: 16px;
+.products-table th,
+.products-table td {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
 }
 
-#productsList tr {
-    border: 1px solid black;
-    
-    font-size: 16px;
+.products-table th {
+    background-color: var(--background-light);
+    font-weight: 600; /* Um pouco mais forte */
+    color: var(--dark-text);
 }
 
-#productsList td {
-    border: 1px solid black;
-    padding-left: 10px;
-    
-    font-size: 16px;
+.products-table tr:last-child td {
+    border-bottom: none;
 }
 
-#productsList tbody {
-    border: 1px solid black;
-    
-    font-size: 16px;
+.products-table tr:hover {
+    background-color: #f1f1f1; /* Mantém hover sutil */
 }
 
-#productsList .editProduct {
-    display: flex;
-    justify-content: space-between;
+.products-table .product-name {
+    /* Estilos específicos para nome, se necessário */
+}
+
+.products-table .product-code {
+    /* Estilos específicos para código, se necessário */
+}
+
+.products-table .product-price {
+    text-align: right; /* Alinha preços à direita */
+    min-width: 100px; /* Garante espaço mínimo */
+}
+
+.products-table .product-stock {
+    text-align: center; /* Centraliza estoque */
+    min-width: 80px;
+}
+
+.products-table .low-stock {
+    color: var(--danger-color);
+    font-weight: bold;
+}
+
+.products-table .actions-cell {
+    text-align: right;
+    white-space: nowrap; /* Impede quebra de linha */
+}
+
+.products-table .btn-edit {
+    background: none;
     border: none;
-    
-    font-size: 16px;
-}
-
-#productsList .editProduct span {
+    color: var(--primary-color);
     cursor: pointer;
+    padding: var(--spacing-xs);
+    margin-left: var(--spacing-sm);
+    vertical-align: middle;
 }
 
-#editingTool {
-    position: relative;
-    width: 700px;
-    padding: 25px;
-    background-color: var(--primary-color);
+.products-table .btn-edit .material-symbols-outlined {
+    font-size: var(--font-size-lg);
+    vertical-align: middle;
 }
 
-#editingTool label {
-    font-size: 18px;
-    font-weight: 500;
-    margin-top: 15px;
+.products-table .btn-edit:hover {
+    color: #0056b3; /* Tom mais escuro do primary */
 }
 
-#editingTool span {
+/* === Formulário de Edição (Modal ou Seção) === */
+.edit-form-container { /* Usar um container para o formulário */
+    background-color: var(--background-white);
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    margin-top: var(--spacing-lg);
+    position: relative; /* Para posicionar botão de fechar */
+    max-width: 700px; /* Limita largura */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.edit-form-container h2 { /* Adicionar um título ao formulário */
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+    color: var(--dark-text);
+    font-size: 1.4em;
+}
+
+.edit-form-container .btn-close {
     position: absolute;
-    right: 20px;
-    top: 5px;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+    background: none;
+    border: none;
+    font-size: 1.8em; /* Aumenta tamanho do ícone */
     cursor: pointer;
-    font-size: 30px;
+    color: var(--secondary-color);
+    padding: var(--spacing-xs);
+    line-height: 1;
 }
 
-#editingTool button {
-    margin-top: 15px;
+.edit-form-container .btn-close:hover {
+    color: var(--dark-text);
 }
+
+.edit-form-container .form-group { /* Agrupar label e input */
+    margin-bottom: var(--spacing-md);
 }
+
+.edit-form-container label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500; /* Peso médio */
+    color: #555;
+    font-size: var(--font-size-sm);
+}
+
+.edit-form-container .form-control { /* Classe comum para inputs/selects */
+    width: 100%;
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-sizing: border-box; /* Garante que padding não aumente a largura */
+}
+
+.edit-form-container .form-actions { /* Container para botões de ação */
+    display: flex;
+    flex-direction: column; /* Empilha botões em mobile */
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+}
+
+.edit-form-container .btn { /* Estilo base para botões */
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-md);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    text-align: center;
+    border: none;
+}
+
+.edit-form-container .btn-danger {
+    background-color: var(--danger-color);
+    color: var(--light-text);
+}
+.edit-form-container .btn-danger:hover {
+    background-color: #c82333; /* Tom mais escuro */
+}
+
+.edit-form-container .btn-dark {
+    background-color: var(--dark-text);
+    color: var(--light-text);
+}
+.edit-form-container .btn-dark:hover {
+    background-color: #23272b; /* Tom mais escuro */
+}
+
+
+/* === Media Queries para Responsividade === */
+
+/* Tablet e acima */
+@media (min-width: 768px) {
+    .products-container {
+        padding: var(--spacing-lg);
+    }
+
+    .products-filter {
+        flex-direction: row; /* Filtro e busca lado a lado */
+        align-items: center;
+        justify-content: space-between; /* Espaça elementos */
+    }
+
+    .category-filter {
+        justify-content: flex-start; /* Alinha botões à esquerda */
+        flex-wrap: nowrap; /* Impede quebra de linha */
+        overflow-x: auto; /* Permite rolagem se necessário */
+        padding-bottom: var(--spacing-xs); /* Espaço para scrollbar */
+    }
+
+    .search-input {
+        width: auto; /* Largura automática */
+        max-width: 300px; /* Limita largura */
+        margin: 0; /* Remove margem auto */
+    }
+
+    .products-table {
+        font-size: var(--font-size-md); /* Aumenta fonte da tabela */
+    }
+
+    .edit-form-container .form-actions {
+        flex-direction: row; /* Botões lado a lado */
+        justify-content: space-between; /* Espaça botões */
+    }
+
+     .edit-form-container .btn-danger {
+        order: 1; /* Move botão deletar para a esquerda */
+    }
+
+    .edit-form-container .btn-dark {
+        order: 2; /* Move botão atualizar para a direita */
+        min-width: 180px; /* Largura mínima para botão principal */
+    }
+}
+
+/* Desktop (Ajustes finos, se necessário) */
+@media (min-width: 1024px) {
+    /* Ajustes adicionais para telas maiores, se houver */
+}
+

@@ -4,46 +4,64 @@ import { db } from '../firebaseConfig';
 import FrenteCaixa from '../components/FrenteCaixa';
 import CriarProduto from '../components/CriarProduto';
 import EditarProdutos from '../components/EditarProdutos';
-import '../styles/Home.css';
+import '../styles/Home.css'; // Manter o CSS original por enquanto, será otimizado depois
 import Vendas from '../components/Vendas';
 import Clientes from '../components/Clientes';
 import Balanço from '../components/Balanço';
 import EntradaDeNotas from '../components/EntradaDeNotas';
+import { useNavigate } from 'react-router-dom'; // Importar useNavigate
+
+// Mapeamento de seções para ícones
+const menuItems = [
+  { label: 'VENDER', section: 'FrenteCaixa', icon: 'point_of_sale' },
+  { label: 'CRIAR PRODUTO', section: 'CriarProduto', icon: 'add_shopping_cart' },
+  { label: 'EDITAR PRODUTOS', section: 'EditarProdutos', icon: 'edit_note' },
+  { label: 'VENDAS FEITAS', section: 'Vendas', icon: 'receipt_long' },
+  { label: 'CLIENTES', section: 'Clientes', icon: 'group' },
+  { label: 'ENTRADA DE NOTAS', section: 'EntradaDeNotas', icon: 'inventory' },
+  { label: 'BALANÇO', section: 'Balanço', icon: 'monitoring' },
+];
 
 export const Home = () => {
-  const [activeSection, setActiveSection] = useState('FrenteCaixa');
-
-  // Estado compartilhado para a lista de compras
+  const [activeSection, setActiveSection] = useState("FrenteCaixa");
   const [shoppingList, setShoppingList] = useState([]);
-  const [companyName, setCompanyName] = useState('')
-  const empresaId = localStorage.getItem('empresaId');
+  const [companyName, setCompanyName] = useState("");
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // Controlar estado do menu
+  const [isOnline, setIsOnline] = useState(navigator.onLine); // Estado para status online
+  const empresaId = localStorage.getItem("empresaId");
+  const navigate = useNavigate(); // Hook para navegação
+
+  // Efeito para monitorar status online/offline
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    // Limpeza ao desmontar o componente
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []); // Executa apenas uma vez ao montar
 
   const openMenu = () => {
-    const menu = document.getElementById('backgroundMenu')
-    const nav = document.getElementById('menuNavigation')
-
-    menu.classList.add('opened')
-    nav.classList.add('active')
-  }
+    setIsMenuOpen(true);
+  };
 
   const closeMenu = () => {
-    const menu = document.getElementById('backgroundMenu')
-    const nav = document.getElementById('menuNavigation')
-
-    menu.classList.remove('opened')
-    nav.classList.remove('active')
-  }
+    setIsMenuOpen(false);
+  };
 
   useEffect(() => {
     const fetchCompanyName = async () => {
       if (empresaId) {
         try {
-          // Se você está buscando na coleção 'Empresas' e não em 'Produtos', a referência deveria ser:
-          const empresaRef = doc(db, 'Empresas', empresaId);  // Aqui está buscando diretamente pela empresa
+          const empresaRef = doc(db, 'Empresas', empresaId);
           const empresaDoc = await getDoc(empresaRef);
-  
           if (empresaDoc.exists()) {
-            setCompanyName(empresaDoc.data().nome);  // Atualiza o nome da empresa
+            setCompanyName(empresaDoc.data().nome);
           } else {
             console.log('Empresa não encontrada');
           }
@@ -52,62 +70,81 @@ export const Home = () => {
         }
       }
     };
-  
     fetchCompanyName();
   }, [empresaId]);
 
-  const logoutUser = () => { 
-    localStorage.removeItem('empresaId')
-    Navigate('/')
-  }
+  const logoutUser = () => {
+    localStorage.removeItem('empresaId');
+    navigate('/'); // Usar navigate para redirecionar
+  };
+
+  const handleMenuItemClick = (section) => {
+    setActiveSection(section);
+    closeMenu(); // Fecha o menu ao selecionar um item
+  };
 
   return (
-    <div id='home'>
-      <h1 id='logoTitle'>
+    <div id="home">
+      {/* Indicador de Status Online/Offline */}
+      <div
+        id="online-status-indicator"
+        className={isOnline ? "online" : "offline"}
+        title={isOnline ? "Online" : "Offline"}
+      ></div>
+
+      <h1 id="logoTitle">
         <span id='logoImg'></span>
         Mercado Forte
       </h1>
       <header>
+        {/* Botão de menu só aparece em mobile (controlado via CSS) */}
         <button className='material-symbols-outlined' id='openMenu' onClick={openMenu}>menu</button>
       </header>
+      {/* Nome da Empresa
+      
+      
       <span id='companyTag'>
-        {companyName} <button id='logoutButton' className='material-symbols-outlined' onClick={logoutUser}>logout</button>
+        {companyName} <button id='logoutButton' className='material-symbols-outlined' onClick={logoutUser} title="Sair">logout</button>
       </span>
+      
+      
+      */}
+      
       <p id='logoSlogan'>Automações e Tecnologia <br />
       75 99105-7248</p>
-      {activeSection === 'FrenteCaixa' && <FrenteCaixa shoppingList={shoppingList} setShoppingList={setShoppingList} />}
-      {activeSection === 'CriarProduto' && <CriarProduto />}
-      {activeSection === 'EditarProdutos' && <EditarProdutos />}
-      {activeSection === 'Balanço' && <Balanço />}
-      {activeSection === 'Vendas' && <Vendas />}
-      {activeSection === 'Clientes' && <Clientes />}
-      {activeSection === 'EntradaDeNotas' && <EntradaDeNotas />}
 
-      <div id='backgroundMenu' onClick={closeMenu}>
-        <menu id="menuNavigation">
-          {[
-            { label: 'VENDER', section: 'FrenteCaixa' },
-            { label: 'CRIAR PRODUTO', section: 'CriarProduto' }, { label: 'EDITAR PRODUTOS', section: 'EditarProdutos' },
-            { label: 'VENDAS FEITAS', section: 'Vendas' },
-            { label: 'CLIENTES', section: 'Clientes' }, { label: 'ENTRADA DE NOTAS', section: 'EntradaDeNotas' }, { label: 'BALANÇO', section: 'Balanço' },
-          ].map(({ label, section }) => (
-            <button
-              key={section}
-              onClick={() => setActiveSection(section)}
-              style={{
-                backgroundColor: activeSection === section ? 'black' : 'white',
-                color: activeSection === section ? 'white' : 'black',
-                border: '1px solid black',
-                padding: '8px 8px',
-                cursor: 'pointer',
-                margin: '0 0px',
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </menu>
-      </div>
+      {/* Renderização Condicional das Seções */}
+      <main id="main-content"> {/* Adiciona um container principal para o conteúdo */} 
+        {activeSection === 'FrenteCaixa' && <FrenteCaixa shoppingList={shoppingList} setShoppingList={setShoppingList} />}
+        {activeSection === 'CriarProduto' && <CriarProduto />}
+        {activeSection === 'EditarProdutos' && <EditarProdutos />}
+        {activeSection === 'Balanço' && <Balanço />}
+        {activeSection === 'Vendas' && <Vendas />}
+        {activeSection === 'Clientes' && <Clientes />}
+        {activeSection === 'EntradaDeNotas' && <EntradaDeNotas />}
+      </main>
+
+      {/* Overlay do Menu (Mobile) */}
+      <div id='backgroundMenu' className={isMenuOpen ? 'opened' : ''} onClick={closeMenu}></div>
+
+      {/* Navegação (Menu Lateral Mobile / Barra Inferior Desktop) */}
+      <nav id="menuNavigation" className={isMenuOpen ? 'active' : ''}>
+        {menuItems.map(({ label, section, icon }) => (
+          <button
+            key={section}
+            onClick={() => handleMenuItemClick(section)}
+            className={`menu-item ${activeSection === section ? 'active' : ''}`}
+            // Remove estilos inline, serão controlados pelo CSS
+          >
+            <span className="material-symbols-outlined menu-icon">{icon}</span>
+            <span className="menu-label">{label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 };
+
+// Exportar o componente Home corretamente
+export default Home;
+

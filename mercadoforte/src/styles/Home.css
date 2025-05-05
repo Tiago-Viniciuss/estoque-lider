@@ -1,171 +1,316 @@
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #343a40; /* Darker background for menu */
+    --danger-color: #dc3545;
+    --success-color: #28a745;
+    --online-color: #28a745; /* Green for online */
+    --offline-color: #dc3545; /* Red for offline */
+    --text-light: #f8f9fa;
+    --text-dark: #212529;
+    --border-color: #495057;
+    --hover-bg-color: #495057;
+    --active-bg-color: #000;
+    --active-text-color: #fff;
+    --menu-width-mobile: 280px;
+    --header-height-mobile: 50px;
+    --menu-height-desktop: 70px;
+    --spacing-sm: 8px;
+    --spacing-md: 15px;
+    --border-radius: 6px;
+    --transition-speed: 0.3s;
+}
+
+body {
+    margin: 0;
+    font-family: sans-serif;
+    background-color: #f0f2f5; /* Lighter background for content area */
+}
+
 #home {
-    width: 100%;
+    /* Padding top/bottom to prevent content overlap with fixed elements */
+    padding-top: var(--header-height-mobile);
+    padding-bottom: 0; /* No bottom padding needed initially */
 }
 
-#logoTitle {
-   position: fixed;
-   bottom: 5px;
-   right: 30px;
-   font-size: 30px;
-   color: white;
-   z-index: 50;
-   display: none;
-}
-
-#logoSlogan {
+/* --- Header --- */
+header {
     position: fixed;
-    bottom: 2px;
-    right: 50px;
-    font-size: 12px;
-    color: white;
-    z-index: 50;
-    display: none;
-    text-align: right;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: var(--header-height-mobile);
+    background-color: var(--secondary-color);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--spacing-md);
+    box-sizing: border-box;
+    z-index: 1001; /* Above menu overlay */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 #openMenu {
-    position: fixed;
-    top: 8px;
-    left: 10px;
-    border-radius: 10px;
-    font-size: 18px;
-    font-weight: 600;
-    background-color: transparent;
-    margin: 0px;
-    padding: 0px;
+    background: none;
     border: none;
-    z-index: 3;
-    color: rgb(255, 255, 255);
+    color: var(--text-light);
+    font-size: 28px; /* Larger icon */
+    cursor: pointer;
+    padding: 0;
+    margin-right: var(--spacing-md);
 }
 
-
-#menuNavigation {
+/* --- Online Status Indicator --- */
+#online-status-indicator {
     position: fixed;
-    left: 0px;
-    bottom: 0px;
+    top: calc(var(--spacing-sm) + 2px); /* Align with header content */
+    right: var(--spacing-md);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    z-index: 1002; /* Above header */
+    transition: background-color var(--transition-speed) ease;
+}
+
+#online-status-indicator.online {
+    background-color: var(--online-color);
+    box-shadow: 0 0 8px var(--online-color);
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+#online-status-indicator.offline {
+    background-color: var(--offline-color);
+    box-shadow: 0 0 6px var(--offline-color);
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* --- Company Tag & Logout --- */
+#companyTag {
+    position: fixed; /* Keep fixed for visibility */
+    top: calc(var(--spacing-sm) + 2px); /* Align with header content */
+    left: 60px; /* Position after menu button */
+    color: var(--text-light);
     display: flex;
-    flex-direction: column;
-    justify-content: left;
-    align-items: left;
-    gap: 5px;
-    width: 0px;
-    visibility: hidden;
-    transition: all 0.2s ease-in-out;
-    overflow-x: hidden;
-    height: 100vh;
-    background-color: var(--secondary-color);
-    margin-top: 0px;
-    padding-top: 70px;
-    padding-left: 0px;
-    z-index: 4;
+    align-items: center;
+    gap: var(--spacing-sm);
+    z-index: 1002; /* Above header */
+    font-size: 0.9rem;
 }
 
-#menuNavigation.active {
-    width: 300px;
-    visibility: visible;
+#logoutButton {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 20px; /* Material Symbol size */
+    padding: 0;
+    opacity: 0.8;
+    transition: opacity var(--transition-speed);
 }
 
-#menuNavigation button {
-    height: 40px;
-    border-radius: 10px;
-    font-size: 10px;
+#logoutButton:hover {
+    opacity: 1;
 }
 
+/* --- Logo (Hidden by default, shown on desktop) --- */
+#logoTitle, #logoSlogan {
+    display: none; /* Hidden by default */
+    position: fixed;
+    color: var(--text-light);
+    z-index: 1001;
+    text-align: right;
+}
+
+/* --- Menu Overlay (Mobile) --- */
 #backgroundMenu {
     position: fixed;
     top: 0;
     left: 0;
-    width: 0;
+    width: 100%;
     height: 100vh;
-    background-color: transparent;
+    background-color: rgba(0, 0, 0, 0.5);
     visibility: hidden;
-    transition: all 0.3s ease-in-out;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 3;
+    opacity: 0;
+    transition: visibility 0s var(--transition-speed), opacity var(--transition-speed) ease-in-out;
+    z-index: 1003; /* Above header/indicator */
 }
 
 #backgroundMenu.opened {
-    width: 100%;
+    visibility: visible;
+    opacity: 1;
+    transition-delay: 0s;
+}
+
+/* --- Menu Navigation (Mobile - Side) --- */
+#menuNavigation {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: var(--menu-width-mobile);
+    background-color: var(--secondary-color);
+    padding: var(--spacing-lg) 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    transform: translateX(-100%);
+    transition: transform var(--transition-speed) ease-in-out;
+    visibility: hidden; /* Hide initially */
+    z-index: 1004; /* Above overlay */
+    overflow-y: auto; /* Allow scrolling if needed */
+}
+
+#menuNavigation.active {
+    transform: translateX(0);
     visibility: visible;
 }
 
-@media screen and (min-width: 600px) {
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: transparent;
+    border: none;
+    color: var(--text-light);
+    font-size: 0.95rem;
+    text-align: left;
+    cursor: pointer;
+    width: 100%;
+    border-radius: 0; /* No radius for side menu items */
+    transition: background-color var(--transition-speed), color var(--transition-speed);
+}
+
+.menu-item .menu-icon {
+    font-size: 22px;
+    opacity: 0.9;
+}
+
+.menu-item:hover {
+    background-color: var(--hover-bg-color);
+}
+
+.menu-item.active {
+    background-color: var(--active-bg-color);
+    color: var(--active-text-color);
+    font-weight: 500;
+}
+
+.menu-item.active .menu-icon {
+    opacity: 1;
+}
+
+/* --- Main Content Area --- */
+#main-content {
+    padding: var(--spacing-md);
+}
+
+/* === Desktop Styles (min-width: 768px) === */
+@media screen and (min-width: 768px) {
     #home {
-        width: 100%;
-    }
-    
-    #logoTitle {
-        position: fixed;
-        bottom: 50px;
-        right: 50px;
-        font-size: 30px;
-        color: white;
-        z-index: 50;
-        display: flex;
+        /* Add padding for fixed bottom menu */
+        padding-top: 0; /* No top padding needed */
+        padding-bottom: var(--menu-height-desktop);
     }
 
-    #logoSlogan {
-        position: fixed;
-        bottom: 2px;
-        right: 50px;
-        font-size: 12px;
-        color: white;
-        z-index: 50;
-        display: flex;
-        text-align: right;
-    }
-    
-    #menuNavigation {
-        position: fixed;
-        bottom: 0px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        width: 100%;
-        background-color: var(--secondary-color);
-        height: 70px;
-        padding-bottom: 0px;
-        margin-bottom: 0px;
-        padding-left: 15px;
-    }
-    
-    #menuNavigation button {
-        border-radius: 10px;
-        font-size: 14px;
+    header {
+        display: none; /* Hide mobile header */
     }
 
     #openMenu {
-        position: fixed;
-        top: 0px;
-        left: 0px;
         display: none;
     }
 
     #backgroundMenu {
-        visibility: visible;
+        display: none; /* No overlay needed */
     }
 
+    #companyTag {
+        top: auto;
+        bottom: calc(var(--spacing-sm) + 5px); /* Position above bottom menu */
+        left: var(--spacing-md);
+        color: var(--text-light);
+        z-index: 1005; /* Above bottom menu */
+    }
+
+    #online-status-indicator {
+        top: auto;
+        bottom: calc(var(--spacing-sm) + 10px); /* Position above bottom menu */
+        right: var(--spacing-md);
+        z-index: 1005; /* Above bottom menu */
+    }
+
+    /* --- Menu Navigation (Desktop - Bottom Bar) --- */
     #menuNavigation {
         position: fixed;
-        bottom: 0px;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 15px;
+        top: auto;
+        bottom: 0;
+        left: 0;
         width: 100%;
+        height: var(--menu-height-desktop);
         background-color: var(--secondary-color);
-        height: 100px;
-        padding-bottom: 0px;
-        margin-bottom: 0px;
-        padding-top: 0px;
-        padding-left: 15px;
+        flex-direction: row;
+        justify-content: center; /* Center items */
+        align-items: center;
+        gap: var(--spacing-sm); /* Smaller gap */
+        padding: 0 var(--spacing-md);
+        transform: translateX(0);
         visibility: visible;
+        box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+        overflow-x: auto; /* Allow horizontal scroll if needed */
+        overflow-y: hidden;
     }
 
-    #menuNavigation button {
-        border-radius: 10px;
-        font-size: 14px;
+    .menu-item {
+        flex-direction: column; /* Icon on top, label below */
+        gap: 4px;
+        padding: var(--spacing-sm) var(--spacing-sm); /* Adjust padding */
+        width: auto; /* Fit content */
+        border-radius: var(--border-radius);
+        font-size: 0.75rem; /* Smaller font */
+        height: 100%;
+        justify-content: center;
+    }
+
+    .menu-item .menu-icon {
+        font-size: 24px; /* Slightly larger icon */
+        margin-bottom: 2px;
+    }
+
+    /* --- Logo (Desktop) --- */
+    #logoTitle {
+        display: block; /* Show logo */
+        bottom: calc(var(--menu-height-desktop) + 25px);
+        right: var(--spacing-md);
+        font-size: 1.5rem;
+    }
+
+    #logoSlogan {
+        display: block; /* Show slogan */
+        bottom: calc(var(--menu-height-desktop) + 5px);
+        right: var(--spacing-md);
+        font-size: 0.7rem;
     }
 }
+
+/* Further adjustments for very large screens if needed */
+@media screen and (min-width: 1200px) {
+    #menuNavigation {
+        justify-content: flex-start; /* Align left on very large screens */
+        padding-left: var(--spacing-lg);
+    }
+}
+

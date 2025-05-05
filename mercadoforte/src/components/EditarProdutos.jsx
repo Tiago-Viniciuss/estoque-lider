@@ -1,386 +1,440 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { doc, setDoc, getDocs, collection, deleteDoc, query, where } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
-import LoadingSpinner from '../components/LoadingSpinner.jsx'
-import '../styles/EditarProdutos.css'
+import { db } from '../firebaseConfig'; // Ajuste o caminho conforme necessário
+import LoadingSpinner from '../components/LoadingSpinner.jsx'; // Ajuste o caminho conforme necessário
+import '../styles/EditarProdutos.css'; // Importa o CSS refatorado
 
-const EditarProdutos = () => {
-    const [productsList, setProductsList] = useState([]);
-    const [filteredProducts, setFilteredProducts] = useState([]);
-    const [selectedProduct, setSelectedProduct] = useState(null);
-    const [costPrice, setCostPrice] = useState('');
-    const [profitMargin, setProfitMargin] = useState(30);
-    const [productPrice, setProductPrice] = useState('');
-    const [editingList, setEditingList] = useState(true);
-    const [editingTool, setEditingTool] = useState(false);
-    const [filterCategory, setFilterCategory] = useState('Todos');
-    const [loading, setLoading] = useState(false)
+// --- Constantes --- 
+const CATEGORIES = ['alimentos', 'bebidas', 'higiene', 'limpeza', 'utilidades', 'botijão', 'Todos'];
+const DEFAULT_PROFIT_MARGIN = 30;
+
+// --- Funções Utilitárias --- (Podem ser movidas para um arquivo utils.js)
+const calculateSuggestedPrice = (cost, margin) => {
+    const costNum = parseFloat(cost);
+    const marginNum = parseFloat(margin);
+    if (!isNaN(costNum) && !isNaN(marginNum)) {
+        return (costNum + (costNum * marginNum / 100)).toFixed(2);
+    }
+    return '';
+};
+
+const generateKeywords = (name) => {
+    if (!name) return [];
+    const lowerCaseName = name.toLowerCase();
+    const words = lowerCaseName.match(/\w+(\'\w+)?/g);
+    return words || [];
+};
+
+// --- Componentes Filhos --- 
+
+const ProductFilter = React.memo(({ currentCategory, onFilterChange, currentSearch, onSearchChange }) => {
+    return (
+        <div className="products-filter">
+            <div className="category-filter">
+                {CATEGORIES.map((category) => (
+                    <button
+                        key={category}
+                        onClick={() => onFilterChange(category)}
+                        className={`btn-category ${currentCategory === category ? 'active' : ''}`}
+                    >
+                        {category}
+                    </button>
+                ))}
+            </div>
+            <input
+                type="text"
+                placeholder="Buscar produto por nome..."
+                value={currentSearch}
+                onChange={(e) => onSearchChange(e.target.value)}
+                className='search-input form-control' // Adiciona form-control se quiser estilos do Bootstrap
+            />
+        </div>
+    );
+});
+
+const ProductTable = React.memo(({ products, onEdit }) => {
+    if (products.length === 0) {
+        return <p>Nenhum produto encontrado.</p>;
+    }
+
+    return (
+        <section className="products-list-section">
+            <table className="products-table">
+                <thead>
+                    <tr>
+                        <th className="product-name">Nome</th>
+                        <th className="product-code">Código</th>
+                        <th className="product-price">Preço Unitário</th>
+                        <th className="product-stock">Estoque</th>
+                        <th className="actions-cell">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {products.map((product) => (
+                        <tr key={product.id} className={`product-item ${product.estoque < 10 ? 'low-stock-row' : ''}`}>
+                            <td className={`product-name ${product.estoque < 10 ? 'low-stock' : ''}`}>{product.nome}</td>
+                            <td className={`product-code ${product.estoque < 10 ? 'low-stock' : ''}`}>{product.codigo}</td>
+                            <td className={`product-price ${product.estoque < 10 ? 'low-stock' : ''}`}>R$ {product.preco?.toFixed(2) ?? '0.00'}</td>
+                            <td className={`product-stock ${product.estoque < 10 ? 'low-stock' : ''}`}>{product.estoque}</td>
+                            <td className="actions-cell">
+                                <button onClick={() => onEdit(product)} className='btn-edit' title="Editar Produto">
+                                    <span className='material-symbols-outlined'>edit</span>
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </section>
+    );
+});
+
+const ProductEditForm = ({ product, onClose, onUpdate, onDelete, loading }) => {
+    const [formData, setFormData] = useState({});
+    const [profitMargin, setProfitMargin] = useState(DEFAULT_PROFIT_MARGIN);
+    const [suggestedPrice, setSuggestedPrice] = useState('');
     const [manualPriceEdit, setManualPriceEdit] = useState(false);
-    const [searchProduct, setSearchProduct] = useState('');
-    const empresaId = localStorage.getItem('empresaId');
-
+    const empresaId = localStorage.getItem('empresaId'); // Necessário para delete
 
     useEffect(() => {
-        if (!manualPriceEdit && selectedProduct) {
-            // Verifique se precoCusto é um número válido
-            const cost = parseFloat(selectedProduct.precoCusto);
-            const margin = parseFloat(profitMargin);
+        if (product) {
+            setFormData({
+                categoria: product.categoria || '',
+                nome: product.nome || '',
+                preco: product.preco?.toFixed(2) ?? '',
+                estoque: product.estoque ?? 0,
+                codigo: product.codigo || '',
+                precoCusto: product.precoCusto?.toFixed(2) ?? '',
+            });
+            setProfitMargin(product.margemLucro ?? DEFAULT_PROFIT_MARGIN);
+            setManualPriceEdit(false); // Reset manual edit flag on product change
+        }
+    }, [product]);
 
-            // Verifique se ambos são números válidos
-            if (!isNaN(cost) && !isNaN(margin)) {
-                const suggestedPrice = cost + (cost * margin / 100);
-                setProductPrice(suggestedPrice.toFixed(2)); // Mantém 2 casas decimais
-            } else {
-                setProductPrice(''); // Caso algum valor seja inválido, deixe o campo vazio
+    useEffect(() => {
+        if (!manualPriceEdit) {
+            const price = calculateSuggestedPrice(formData.precoCusto, profitMargin);
+            setSuggestedPrice(price);
+            // Atualiza o preço final apenas se o preço sugerido for válido e diferente
+            if (price !== '' && price !== formData.preco) {
+                 setFormData(prev => ({ ...prev, preco: price }));
             }
         }
-    }, [selectedProduct, profitMargin, manualPriceEdit]);
+    }, [formData.precoCusto, profitMargin, manualPriceEdit, formData.preco]);
 
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
 
-    const handleCostPriceChange = (e) => {
-        const value = e.target.value;
-        setCostPrice(value);
-
-        // Verifique se o valor é um número válido
-        const cost = parseFloat(value);
-        if (isNaN(cost)) {
-            setProductPrice(''); // Se o valor for inválido, limpa o preço sugerido
-        } else {
-            setManualPriceEdit(false); // Se o usuário altera o preço de custo, recalcula automaticamente
+        if (name === 'precoCusto') {
+            setManualPriceEdit(false);
+        }
+        if (name === 'preco') {
+            setManualPriceEdit(true);
         }
     };
 
     const handleProfitMarginChange = (e) => {
         const value = e.target.value;
         setProfitMargin(value);
-
-        // Verifique se o valor é um número válido
-        const margin = parseFloat(value);
-        if (isNaN(margin)) {
-            setProductPrice(''); // Se o valor for inválido, limpa o preço sugerido
-        } else {
-            setManualPriceEdit(false); // Se o usuário altera a margem de lucro, recalcula automaticamente
-        }
+        setManualPriceEdit(false);
     };
 
-
-    const handleProductPriceChange = (e) => {
-        setProductPrice(e.target.value);
-        setManualPriceEdit(true); // Se o usuário edita manualmente, não recalcula automaticamente
-    };
-
-    const fetchProducts = async () => {
-        setLoading(true)
-        try {
-            const productsRef = collection(db, `Empresas/${empresaId}/Produtos`);
-            const productsSnapshot = await getDocs(productsRef);
-            const products = productsSnapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
-            products.sort((a, b) => a.nome.localeCompare(b.nome)); // Ordenar alfabeticamente
-            setProductsList(products);
-            setFilteredProducts(products); // Inicialmente, sem filtro
-        } catch (error) {
-            console.error('Erro ao buscar produtos:', error);
-        } finally {
-            setLoading(false)
-        }
-    };
-
-    useEffect(() => {
-        fetchProducts();
-    }, []);
-
-
-    useEffect(() => {
-        const searchLower = searchProduct.toLowerCase();
-    
-        const filtered = productsList.filter(product =>
-            product.nome.toLowerCase().includes(searchLower)
-        );
-    
-        setFilteredProducts(filtered);
-    }, [searchProduct, productsList]);
-    
-
-    // Handle category filter
-
-    const handleFilter = (category) => {
-        setFilterCategory(category);
-        if (category === 'Todos') {
-            setFilteredProducts(productsList);
-        } else {
-            setFilteredProducts(
-                productsList.filter((product) => product.categoria === category)
-            );
-        }
-    };
-
-    // Handle editing a product
-    const handleEdit = (product) => {
-        setSelectedProduct(product);
-        setEditingList(false);
-        setEditingTool(true);
-    };
-
-    const handleCloseEdit = () => {
-        setEditingList(true);
-        setEditingTool(false);
-    };
-
-    const generateKeywords = (name) => {
-        const lowerCaseName = name.toLowerCase(); // Converte para minúsculas
-        const words = lowerCaseName.match(/\w+('\w+)?/g); // Expressão regular para capturar palavras
-        return words || []; // Retorna o array de palavras-chave
-    };
-
-    // Handle product update
-    const handleUpdateProduct = async (event) => {
+    const handleSubmit = (event) => {
         event.preventDefault();
-
-        if (!selectedProduct.categoria) {
+        if (!formData.categoria) {
             alert('Por favor, selecione uma categoria válida.');
             return;
         }
 
-        const formData = new FormData(event.target);
+        const keywords = generateKeywords(formData.nome);
 
-        const keywords = generateKeywords(formData.get('productName'));
-
-        const updatedProduct = {
-            categoria: formData.get('productCategory'),
-            nome: formData.get('productName'),
-            nomeMinusculo: formData.get('productName').toLowerCase(),
-            preco: parseFloat(formData.get('productPrice')),
-            estoque: parseInt(formData.get('stockQuantity')),
-            codigo: formData.get('productCode'),
+        const updatedProductData = {
+            ...product, // Mantém outros campos não editáveis
+            categoria: formData.categoria,
+            nome: formData.nome,
+            nomeMinusculo: formData.nome.toLowerCase(),
+            preco: parseFloat(formData.preco) || 0,
+            estoque: parseInt(formData.estoque) || 0,
+            codigo: formData.codigo,
+            precoCusto: parseFloat(formData.precoCusto) || 0,
+            margemLucro: parseFloat(profitMargin) || 0,
             keywords: keywords,
-            keywordsMinusculo: keywords.map((keyword) => keyword.toLowerCase()),
-            margemLucro: profitMargin,
-            precoCusto: Number(costPrice),
+            keywordsMinusculo: keywords.map(k => k.toLowerCase()),
         };
+        onUpdate(product.id, updatedProductData);
+    };
 
-        try {
-            const productRef = doc(db, `Empresas/${empresaId}/Produtos`, selectedProduct.id);
-            await setDoc(productRef, updatedProduct, { merge: true });
-            setEditingTool(false);
-            setEditingList(true);
-            fetchProducts(); // Atualizar lista de produtos
-        } catch (error) {
-            console.error('Erro ao atualizar produto:', error);
+    const handleDelete = async () => {
+        if (!product || !product.id || !empresaId) return;
+        const confirmDelete = window.confirm(`Tem certeza que deseja excluir o produto "${product.nome}"?`);
+        if (confirmDelete) {
+            onDelete(product.id, product.nome); // Passa ID e nome para feedback
         }
     };
 
-    const handleDeleteProduct = async (productCode) => {
-        const confirmDelete = window.confirm("Tem certeza que deseja excluir este produto?");
-        if (!confirmDelete) return;
+    if (!product) return null;
 
+    return (
+        <form className="edit-form-container" onSubmit={handleSubmit}>
+            <button type="button" onClick={onClose} className='btn-close material-symbols-outlined' title="Fechar Edição">close</button>
+            <h2>Editar Produto</h2>
+
+            <div className="form-group">
+                <label htmlFor="productCategory">Categoria</label>
+                <select
+                    name="categoria"
+                    id="productCategory"
+                    className="form-control"
+                    value={formData.categoria}
+                    onChange={handleChange}
+                    required
+                >
+                    <option value="">Selecione...</option>
+                    {CATEGORIES.filter(c => c !== 'Todos').map(cat => (
+                        <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+                    ))}
+                </select>
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="productName">Nome</label>
+                <input
+                    type="text"
+                    name="nome"
+                    id="productName"
+                    value={formData.nome}
+                    onChange={handleChange}
+                    className="form-control"
+                    required
+                />
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="productCode">Código</label>
+                <input
+                    type="text"
+                    name="codigo"
+                    id="productCode"
+                    value={formData.codigo}
+                    onChange={handleChange}
+                    className="form-control"
+                    // onKeyDown={...} // Manter se necessário
+                />
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="costPrice">Preço de Custo</label>
+                <input
+                    type="number"
+                    name="precoCusto"
+                    id="costPrice"
+                    value={formData.precoCusto}
+                    onChange={handleChange}
+                    className="form-control"
+                    min="0"
+                    step="0.01"
+                />
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="profitMargin">Margem de Lucro (%)</label>
+                <input
+                    type="number"
+                    id="profitMargin"
+                    value={profitMargin}
+                    onChange={handleProfitMarginChange}
+                    className="form-control"
+                    min="0"
+                />
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="productPrice">Preço Unitário (Venda)</label>
+                <input
+                    type="number"
+                    name="preco"
+                    id="productPrice"
+                    value={formData.preco}
+                    onChange={handleChange}
+                    className="form-control"
+                    min="0"
+                    step="0.01"
+                    required
+                />
+                 {suggestedPrice && !manualPriceEdit && <small>Preço Sugerido: R$ {suggestedPrice}</small>}
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="stockQuantity">Estoque</label>
+                <input
+                    type="number"
+                    name="estoque"
+                    id="stockQuantity"
+                    value={formData.estoque}
+                    onChange={handleChange}
+                    className="form-control"
+                    min="0"
+                />
+            </div>
+
+            <div className="form-actions">
+                <button type="button" onClick={handleDelete} className="btn btn-danger" disabled={loading}>
+                    {loading ? 'Excluindo...' : 'Excluir Produto'}
+                </button>
+                <button type="submit" className="btn btn-dark" disabled={loading}>
+                    {loading ? 'Salvando...' : 'Salvar Alterações'}
+                </button>
+            </div>
+        </form>
+    );
+};
+
+// --- Componente Principal --- 
+
+const EditarProdutos = () => {
+    const [allProducts, setAllProducts] = useState([]);
+    const [filteredProducts, setFilteredProducts] = useState([]);
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [filterCategory, setFilterCategory] = useState('Todos');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const empresaId = localStorage.getItem('empresaId');
+
+    const productsRef = useMemo(() => {
+        if (!empresaId) return null;
+        return collection(db, `Empresas/${empresaId}/Produtos`);
+    }, [empresaId]);
+
+    const fetchProducts = useCallback(async () => {
+        if (!productsRef) {
+            setError("ID da empresa não encontrado. Faça login novamente.");
+            return;
+        }
+        setLoading(true);
+        setError(null);
         try {
-            setLoading(true);
-
-            // Buscar o documento com base no campo "codigo"
-            const querySnapshot = await getDocs(query(collection(db, "Produtos"), where("codigo", "==", productCode)));
-
-            if (querySnapshot.empty) {
-                alert("Produto não encontrado.");
-                return;
-            }
-
-            // Pega o primeiro documento encontrado e deleta
-            const productDoc = querySnapshot.docs[0];
-            await deleteDoc(doc(db, "Produtos", productDoc.id));
-
-            alert("Produto deletado com sucesso!");
-
-            // Atualiza a lista sem precisar refazer a busca no Firestore
-            setProductsList((prev) => prev.filter(product => product.codigo !== productCode));
-            setFilteredProducts((prev) => prev.filter(product => product.codigo !== productCode));
-            setEditingTool(false)
-            setEditingList(true)
-        } catch (error) {
-            console.error(`Erro ao deletar produto com código ${productCode}:`, error);
-            alert("Erro ao deletar produto. Tente novamente.");
+            const snapshot = await getDocs(productsRef);
+            const productsData = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+            productsData.sort((a, b) => a.nome.localeCompare(b.nome));
+            setAllProducts(productsData);
+        } catch (err) {
+            console.error('Erro ao buscar produtos:', err);
+            setError('Falha ao carregar produtos. Tente novamente.');
         } finally {
             setLoading(false);
         }
+    }, [productsRef]);
+
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts]);
+
+    useEffect(() => {
+        let currentFiltered = [...allProducts];
+
+        // Filtrar por categoria
+        if (filterCategory !== 'Todos') {
+            currentFiltered = currentFiltered.filter(p => p.categoria === filterCategory);
+        }
+
+        // Filtrar por termo de busca
+        if (searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
+            currentFiltered = currentFiltered.filter(p =>
+                p.nome.toLowerCase().includes(searchLower) ||
+                p.codigo?.toLowerCase().includes(searchLower) // Opcional: buscar por código também
+            );
+        }
+
+        setFilteredProducts(currentFiltered);
+    }, [allProducts, filterCategory, searchTerm]);
+
+    const handleUpdateProduct = useCallback(async (productId, updatedData) => {
+        if (!productsRef) return;
+        setLoading(true);
+        setError(null);
+        try {
+            const productRef = doc(db, `Empresas/${empresaId}/Produtos`, productId);
+            await setDoc(productRef, updatedData, { merge: true });
+            setSelectedProduct(null); // Fecha o formulário
+            await fetchProducts(); // Rebusca produtos para garantir consistência
+            alert('Produto atualizado com sucesso!');
+        } catch (err) {
+            console.error('Erro ao atualizar produto:', err);
+            setError('Falha ao salvar alterações. Tente novamente.');
+            setLoading(false); // Mantém loading se der erro para não fechar form
+        }
+        // setLoading(false) é chamado no finally do fetchProducts
+    }, [productsRef, fetchProducts, empresaId]);
+
+    const handleDeleteProduct = useCallback(async (productId, productName) => {
+         if (!productsRef) return;
+        setLoading(true);
+        setError(null);
+        try {
+            const productRef = doc(db, `Empresas/${empresaId}/Produtos`, productId);
+            await deleteDoc(productRef);
+            setSelectedProduct(null); // Fecha o formulário
+            // Atualiza estado localmente para resposta mais rápida
+            setAllProducts(prev => prev.filter(p => p.id !== productId));
+            alert(`Produto "${productName}" excluído com sucesso!`);
+        } catch (err) {
+            console.error('Erro ao excluir produto:', err);
+            setError('Falha ao excluir produto. Tente novamente.');
+        } finally {
+            setLoading(false);
+        }
+    }, [productsRef, empresaId]);
+
+    const handleSelectProductEdit = (product) => {
+        setSelectedProduct(product);
     };
 
+    const handleCloseEdit = () => {
+        setSelectedProduct(null);
+    };
 
-
-    if (loading) {
-        return (<LoadingSpinner />
-
-        )
+    if (!empresaId) {
+        return <p>Erro: ID da empresa não encontrado. Por favor, faça login novamente.</p>;
     }
 
     return (
-        <div id='productsContainer'>
-            <menu id="chooseCategory">
-                {['alimentos', 'bebidas', 'higiene', 'limpeza', 'utilidades', 'botijão', 'Todos'].map((category) => (
-                    <button
-                        key={category}
-                        onClick={() => handleFilter(category)}
-                        style={{
-                            backgroundColor: filterCategory === category ? 'black' : 'white',
-                            color: filterCategory === category ? 'white' : 'black',
-                            border: '1px solid black',
-                            padding: '8px 8px',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        {category}
-                    </button>
-                ))}
-            </menu>
+        <div className='products-container'>
+            <h1>Editar Produtos</h1>
 
-            <input id="searchProductInput"
-                type="text"
-                placeholder="Buscar produto..."
-                value={searchProduct}
-                onChange={(e) => setSearchProduct(e.target.value)} className='form-control'
-            />
+            {error && <p style={{ color: 'red' }}>Erro: {error}</p>}
 
-            <section id="productsEditing">
-                {editingList && (
-                    <table id="productsList">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Código</th>
-                                <th className='priceTable'>Preço Unitário</th>
-                                <th>Estoque</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredProducts.map((product) => (
-                                <tr
-                                    key={product.id}
-                                    className="productItem"
-                                >
-                                    <td style={{ color: product.estoque < 10 ? 'red' : 'black' }}>{product.nome}</td>
-                                    <td style={{ color: product.estoque < 10 ? 'red' : 'black' }} className='editProduct'>{product.codigo}</td>
-                                    <td style={{ color: product.estoque < 10 ? 'red' : 'black' }}>{product.preco}</td>
-                                    <td style={{ color: product.estoque < 10 ? 'red' : 'black' }} className='editProduct'>
-                                        {product.estoque} <span onClick={() => handleEdit(product)} className='material-symbols-outlined'>edit</span></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-
-                {editingTool && selectedProduct && (
-                    <form id="editingTool" onSubmit={handleUpdateProduct}>
-                        <span onClick={handleCloseEdit} className='material-symbols-outlined'>close</span>
-                        <label htmlFor="productCategory">Categoria do Produto</label>
-                        <select
-                            name="productCategory"
-                            id="productCategory"
-                            className="form-control"
-                            value={selectedProduct?.categoria || ''}
-                            onChange={(e) =>
-                                setSelectedProduct({ ...selectedProduct, categoria: e.target.value })
-                            }
-                        >
-                            <option value="">Selecione uma categoria</option>
-                            <option value="alimentos">Alimentos</option>
-                            <option value="bebidas">Bebidas</option>
-                            <option value="higiene">Higiene</option>
-                            <option value="limpeza">Limpeza</option>
-                            <option value="utilidades">Utilidades</option>
-                        </select>
-
-                        <label htmlFor="productName">Nome do Produto</label>
-                        <input
-                            type="text"
-                            name="productName"
-                            id="productName"
-                            defaultValue={selectedProduct.nome}
-                            className="form-control"
-                        />
-
-                        <label htmlFor="CostPrice">Preço de Custo</label>
-                        <input
-                            type="number"
-                            id="CostPrice"
-                            className="form-control"
-                            defaultValue={selectedProduct.precoCusto}
-                            onChange={handleCostPriceChange}
-                            min="0" // Adiciona um limite mínimo, caso deseje
-                            step="0.01" // Permite decimais
-                        />
-
-                        <label htmlFor="profitMargin">Margem de Lucro (%)</label>
-                        <input
-                            type="number"
-                            id="profitMargin"
-                            className="form-control"
-                            value={profitMargin}
-                            onChange={handleProfitMarginChange}
-                        />
-
-                        <label htmlFor="productPrice">Preço Sugerido</label>
-                        <input
-                            type="number"
-                            id="productPrice"
-                            className="form-control"
-                            value={productPrice}
-                            onChange={handleProductPriceChange}
-                            min="0" // Adiciona um limite mínimo, caso deseje
-                            step="0.01" // Permite decimais
-                        />
-
-
-                        <label htmlFor="productPrice">Preço Unitário</label>
-                        <input
-                            type="number"
-                            name="productPrice"
-                            id="productPrice"
-                            defaultValue={selectedProduct.preco || ''}
-                            className="form-control"
-                            step="0.01"
-                            min="0"
-                            required
-                        />
-
-                        <label htmlFor="stockQuantity">Quantidade em Estoque</label>
-                        <input
-                            type="number"
-                            name="stockQuantity"
-                            id="stockQuantity"
-                            defaultValue={selectedProduct.estoque}
-                            className="form-control"
-                        />
-
-                        <label htmlFor="productCode">Código do Produto</label>
-                        <input
-                            type="text"
-                            name="productCode"
-                            id="productCode"
-                            defaultValue={selectedProduct.codigo}
-                            className="form-control"
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    e.preventDefault(); // Impede que o ENTER seja processado
-                                    console.log("Código lido:", productCode); // Exibe o código no console
-                                    // Aqui você pode chamar outra função, como enviar o código para um banco de dados
-                                }
-                            }}
-                        />
-
-                        <button onClick={() => handleDeleteProduct(selectedProduct.codigo)} className="btn btn-danger form-control">
-                            Deletar
-                        </button>
-
-
-                        <button className="btn btn-dark form-control" type="submit">
-                            ATUALIZAR PRODUTO
-                        </button>
-                    </form>
-                )}
-            </section>
+            {!selectedProduct ? (
+                <>
+                    <ProductFilter
+                        currentCategory={filterCategory}
+                        onFilterChange={setFilterCategory}
+                        currentSearch={searchTerm}
+                        onSearchChange={setSearchTerm}
+                    />
+                    {loading && allProducts.length === 0 ? (
+                        <LoadingSpinner />
+                    ) : (
+                        <ProductTable products={filteredProducts} onEdit={handleSelectProductEdit} />
+                    )}
+                </>
+            ) : (
+                <ProductEditForm
+                    product={selectedProduct}
+                    onClose={handleCloseEdit}
+                    onUpdate={handleUpdateProduct}
+                    onDelete={handleDeleteProduct}
+                    loading={loading}
+                />
+            )}
         </div>
     );
 };
 
 export default EditarProdutos;
+

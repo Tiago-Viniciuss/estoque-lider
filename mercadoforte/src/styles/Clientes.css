@@ -1,340 +1,374 @@
+/* --- Variáveis e Reset Básico (Reutilizando do FrenteCaixa.css se aplicável) --- */
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8; /* Azul info para botões como pagar */
+    --light-bg: #f8f9fa;
+    --dark-text: #343a40;
+    --light-text: #f8f9fa;
+    --border-color: #dee2e6;
+    --shadow-sm: 0 .125rem .25rem rgba(0, 0, 0, .075);
+    --shadow-md: 0 .5rem 1rem rgba(0, 0, 0, .15);
+    --border-radius: .375rem; /* 6px */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* --- Container Principal --- */
 #clientes {
-    padding-top: 45px;
-    padding-bottom: 40px;
+    padding: 20px 15px 80px 15px; /* Aumenta padding inferior para não cobrir com FAB */
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* --- Filtro --- */
+#filterContainer { /* Adicionar uma div container para o filtro no JSX */
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background-color: #fff;
+    padding: 15px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+#filterContainer label {
+    font-weight: bold;
+    color: #555;
+    white-space: nowrap;
+}
+
+#filterName {
+    flex-grow: 1; /* Ocupa espaço disponível */
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 1em;
+    margin-left: 0; /* Remove margem antiga */
+    width: auto; /* Remove largura fixa */
+}
+
+/* --- Lista de Clientes (Mobile First - Cards) --- */
+#clientsListContainer { /* Adicionar uma div container para a lista no JSX */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 #clientsList {
-    width: 350px;
-    margin: auto;
-    margin-top: 25px;
-    font-size: 10px;
-    font-weight: 500;
-    text-align: left;
+    display: none; /* Oculta a tabela por padrão (mobile) */
 }
 
-#clientsList th {
-    border: 1px solid black;
-    padding-left: 10px;
-}
-
-#clientsList tr {
-    border: 1px solid black;
-}
-
-#clientsList td {
-    border: 1px solid black;
-    padding-left: 10px;
-}
-
-#clientsList tbody {
-    border: 1px solid black;
-}
-
-#clientsList tbody button {
-    width: 120px;
-    height: 25px;
-    font-size: 8px;
-}
-
-
-#filterName {
-    width: 200px;
-    display: inline;
-    margin-left: 10px;
-    font-size: 12px;
-}
-
-#clietsList .actions {
+.client-card { /* Substituir a estrutura <table> por divs com esta classe no JSX */
+    background-color: #fff;
+    border-radius: var(--border-radius);
+    padding: 15px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
     display: flex;
-    justify-content: space-around;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.client-card .client-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.client-card .client-info span {
+    font-size: 0.95em;
+}
+
+.client-card .client-info strong {
+    color: var(--dark-text);
+}
+
+.client-card .client-debt {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--danger-color);
+    margin-top: 5px;
+}
+
+.client-card .client-debt.zero {
+    color: var(--success-color);
+}
+
+.client-card .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+}
+
+.client-card .actions .btn {
+    flex-grow: 1;
+    padding: 8px 10px;
+    font-size: 0.9em;
     border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: background-color 0.2s ease;
+}
+
+.btn-info {
+    background-color: var(--info-color);
+    color: white;
+}
+.btn-info:hover {
+    background-color: #138496;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    color: var(--dark-text);
+}
+.btn-warning:hover {
+    background-color: #e0a800;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    color: var(--secondary-color);
+}
+.btn-icon:hover {
+    color: var(--dark-text);
+}
+.btn-icon .material-symbols-outlined {
+    font-size: 1.3em;
+    vertical-align: middle;
 }
 
 #deleteClient {
-    border: none;
+    color: var(--danger-color);
+}
+#deleteClient:hover {
+    color: #c82333;
 }
 
-#deleteClient span {
+/* --- Botão Flutuante (FAB) --- */
+#addClient {
+    position: fixed;
+    bottom: 30px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
     border: none;
-    font-size: 16px;
-}
-
-#payBill {
+    font-size: 2em;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-weight: bold;
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    z-index: 999;
+    transition: background-color 0.2s ease;
 }
 
-#payBill span {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 15px;
+#addClient:hover {
+    background-color: #0056b3;
 }
 
-#paymentModal {
+/* --- Modais --- */
+.modal-background {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.6);
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 1000;
+    padding: 15px;
 }
 
-#paymentModal #paymentBody {
-    background: white;
-    padding: 20px;
-    border-radius: 5px;
-    width: 90%;
+.modal-content {
+    background-color: white;
+    padding: 25px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
     max-width: 500px;
-}
-
-#paymentModal #paymentBody h2 {
-    font-size: 20px;
-}
-
-#paymentBody div {
-    display: flex;
-    justify-content: center;
-    margin-top: 25px;
-    gap: 10px;
-}
-
-#confirmPayment {
-    width: 70%;
-}
-
-#cancelPayment {
-    width: 20%;
-    font-size: 12px;
-}
-
-#addClient {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    font-size: 35px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: fixed;
-    bottom: 80px;
-    right: 40px;
-}
-
-#addClientContainer {
     width: 100%;
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.82);
-    position: fixed;
-    top: 0px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 10px;
-}
-
-#addClientForm {
-    width: 300px;
-    height: 350px;
-    background-color: rgb(255, 255, 255);
-    border-radius: 15px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    justify-content: center;
-    align-items: center;
+    max-height: 90vh;
+    overflow-y: auto;
     position: relative;
 }
 
-#closeFormButton {
-    background-color: red;
-    width: 50px;
-    height: 50px;
-    border-radius: 15px;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    position: absolute;
-    right: 10px;
-    top: 10px;
+.modal-content h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--dark-text);
+    font-size: 1.4em;
 }
 
-.openClientModal {
+.modal-content label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+    font-size: 0.9em;
+}
+
+.modal-content input[type="text"],
+.modal-content input[type="number"],
+.modal-content input[type="tel"],
+.modal-content select {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 1em;
+}
+
+.modal-content .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-content .modal-actions .btn {
+    flex-grow: 1;
+    padding: 10px 15px;
+    font-size: 1em;
+    border: none;
+    border-radius: var(--border-radius);
     cursor: pointer;
 }
 
-#editClientModal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+#closeFormButton, #closeEditButton, #closePaymentButton { /* Adicionar IDs aos botões de fechar */
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.6em;
+    cursor: pointer;
+    color: var(--secondary-color);
+    padding: 5px;
+    line-height: 1;
+}
+#closeFormButton:hover, #closeEditButton:hover, #closePaymentButton:hover {
+    color: var(--dark-text);
 }
 
-#editClientModal div {
-    background-color: white;
-    width: 90%;
-    border-radius: 15px;
+/* Específicos dos Modais */
+#paymentBody p {
+    margin-bottom: 15px;
+    font-size: 1.1em;
+    text-align: center;
+}
+#paymentBody strong {
+    color: var(--primary-color);
+}
+
+#addClientForm, #editClientForm { /* Usar IDs ou classes consistentes */
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 10px;
 }
 
-#editClientModal input {
-    margin-bottom: 20px;
-}
+/* --- Media Queries --- */
 
-
-#editClientModal div button{ 
-    width: 250px;
-}
-
-@media screen and (min-width: 600px) {
-
+/* Tablet */
+@media (min-width: 768px) {
     #clientes {
-        padding-bottom: 150px;
+        padding: 30px 20px 100px 20px;
     }
-   
+
+    /* Transição para Tabela */
+    #clientsListContainer {
+        display: block; /* Remove flex */
+        overflow-x: auto; /* Permite rolagem horizontal se necessário */
+    }
+
     #clientsList {
-        width: 700px;
-        margin: auto;
-        margin-top: 25px;
-        font-size: 18px;
-        font-weight: 500;
-        text-align: left;
-    }
-    
-    #clientsList th {
-        border: 1px solid black;
-        padding-left: 10px;
-    }
-    
-    #clientsList tr {
-        border: 1px solid black;
-    }
-    
-    #clientsList td {
-        border: 1px solid black;
-        padding-left: 10px;
-    }
-    
-    #clientsList tbody {
-        border: 1px solid black;
-    }
-    
-    #clientsList tbody button {
-        width: 120px;
-        height: 25px;
-        font-size: 10px;
-    }
-    
-    #filterName {
-        width: 200px;
-        display: inline;
-        margin-left: 10px;
-    }
-    
-    #paymentModal {
-        position: fixed;
-        top: 0;
-        left: 0;
         width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        border-collapse: collapse;
+        background-color: #fff;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+        font-size: 1em; /* Tamanho de fonte padrão */
+        text-align: left;
+        display: table; /* Adicionado para exibir a tabela em telas maiores */
     }
-    
-    #paymentModal #paymentBody {
-        background: white;
-        padding: 20px;
-        border-radius: 5px;
-        width: 90%;
-        max-width: 500px;
+
+    #clientsList th, #clientsList td {
+        border: none; /* Remove bordas antigas */
+        border-bottom: 1px solid var(--border-color);
+        padding: 12px 15px;
+        vertical-align: middle;
     }
-    
-    #paymentModal #paymentBody h2 {
-        font-size: 20px;
+
+    #clientsList th {
+        background-color: var(--light-bg);
+        font-weight: bold;
+        color: var(--dark-text);
     }
-    
-    #paymentBody div {
-        display: flex;
-        justify-content: center;
-        margin-top: 25px;
-        gap: 10px;
+
+    #clientsList tr:last-child td {
+        border-bottom: none;
     }
-    
-    #confirmPayment {
-        width: 70%;
+
+    #clientsList tr:hover {
+        background-color: #f1f1f1;
     }
-    
-    #cancelPayment {
-        width: 20%;
+
+    #clientsList .actions {
+        border: none; /* Remove borda das ações */
+        padding: 5px 15px; /* Ajusta padding */
+        white-space: nowrap; /* Evita quebra de linha nos botões */
     }
-    
+
+    #clientsList .actions .btn {
+        flex-grow: 0; /* Não estica mais */
+        width: auto; /* Largura automática */
+        padding: 6px 12px;
+    }
+
+    /* Esconde a estrutura de card */
+    .client-card {
+        display: none;
+    }
+
     #addClient {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        font-size: 35px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: fixed;
-        bottom: 120px;
-        right: 40px;
-    }
-    
-    #addClientContainer {
-        width: 100vw;
-        height: 100vh;
-        background-color: rgba(0, 0, 0, 0.82);
-        position: fixed;
-        top: 0px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    
-    #addClientForm {
-        width: 600px;
-        height: 350px;
-        background-color: rgb(255, 255, 255);
-        border-radius: 15px;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        justify-content: center;
-        align-items: center;
-        position: relative;
-    }
-    
-    #closeFormButton {
-        background-color: red;
-        width: 50px;
-        height: 50px;
-        border-radius: 15px;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        position: absolute;
-        right: 10px;
-        top: 10px;
+        bottom: 40px;
+        right: 30px;
     }
 }
 
+/* Desktop */
+@media (min-width: 1024px) {
+    #clientes {
+        padding: 40px;
+    }
+
+    #clientsList th, #clientsList td {
+        padding: 15px 20px;
+    }
+
+    .modal-content {
+        max-width: 600px;
+    }
+}
 

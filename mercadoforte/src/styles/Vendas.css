@@ -1,474 +1,390 @@
-
-@media screen and (max-width: 800px) { 
-
+/* --- Geral --- */
 #vendas {
-    max-width: 350px;
-    margin: auto;  
-    padding-bottom: 260px;
-    padding-top: 55px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-
-}
-
-#salesSection {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;}
-
-#clientFilter {
-    display: flex;
-    gap: 10px;
-    justify-content: start;
-    align-items: center;
-    font-size: 12px;
-}
-
-#clientFilter input {
-    width: 200px;
-    display: inline;
-    margin-left: 10px;
-    font-size: 12px;
-}
-
-
-#dateFilter {
-    display: flex;
-    gap: 10px;
-    justify-content: start;
-    align-items: center;
-    margin-top: 5px;
-    margin-bottom: 5px;
-    font-size: 12px;
-}
-
-#dateFilter select {
-    width: 200px;
-    color: rgb(97, 97, 97);
-    font-size: 12px;
-}
-
-#specificDateFilter {
-    display: flex;
-    gap: 10px;
-    justify-content: start;
-    align-items: center;
-    margin-top: 5px;
-    margin-bottom: 30px;
-    font-size: 12px;
-}
-
-#specificDateFilter input {
-    width: 200px;
-    color: rgb(97, 97, 97);
-    font-size: 12px;
-}
-
-#salesNumbers {
-    position: fixed;
-    bottom: 0px;
-    left: 0px;
-    background-color: var(--secondary-color);
-    color: white;
-    width: 100%;
-    border-top: 2px solid rgba(71, 70, 70, 0.693);
-    padding-top: 10px;
-    z-index: 2;
-}
-
-#chart {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding-bottom: 50px;
-}
-
-#modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
-}
-
-
-#modalContent {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    width: 90%;
-    max-height: 600px;
-    max-width: 350px;
-    position: relative;
-    overflow-y: auto;
-}
-
-#closeModal {
-    background-color: transparent;
-    color: rgb(0, 0, 0);
-    border: none;
-    padding: 10px;
-    cursor: pointer;
-    border-radius: 5px;
-    position: absolute;
-    right: 0px;
-    top: 0px;
-}
-
-.individualSale {
-    background-color: rgb(233, 233, 233);
-    border: none;
-    border-radius: 15px;
-    overflow-x: hidden;
-    width: 300px;
-}
-
-ul {
-    list-style: none;
-    padding: 0;
-}
-
-ul li {
-    background-color: rgb(249, 248, 248);
-    padding: 10px;
-    border: 1px solid #ddd;
-    margin: 5px 0;
-    cursor: pointer;
-    text-align: left;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-ul li:hover {
-    background: #f0f0f0;
-}
-
-#modalButtons {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 20px;
-}
-
-
-#fiadoPaymentsSection {
-    display: flex;
-    flex-direction: column;
-    justify-content: start;
-    align-items: center;
-    border-radius: 10px;
-    padding: 10px;
-    background-color: #f0f0f0;
-}
-
-#fiadoPaymentsSection select {
-    width: 250px;
-    margin-bottom: 5px;
-}
-
-#fiadoPaymentsSection input {
-    width: 250px;
-    margin-bottom: 10px;
-}
-
-#fiadoList {
-    margin: 0px;
-    padding: 0px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    width: 250px;
-}
-
-#fiadoPaymentsSection #fiadoItem {
-    border-radius: 10px;
-    margin: auto;
-    width: 250px;
-}
-
-#paymentDashboard {
-    background-color: var(--secondary-color);
-    width: 300px;
+    font-family: sans-serif;
     padding: 15px;
-    color: white;
-    border-radius: 10px;
-    margin-top: 15px;
-}
-
-#paymentDashboard h3 {
-    display: none;
-}
-
-#paymentDashboard p {
-    font-weight: 500;
-    text-align: start;
-    
-}
-
-#caixaDia {
-    width: 150px;
-    font-size: 12px;
-    background-color: #ffffff;
-    border: var(--secondary-color) 2px solid;
-    border-radius: 10px;
-    padding: 10px;
-    position: fixed;
-    bottom: 200px;
-    right: 15px;
-    font-weight: 500;
-}
-
-}
-
-@media screen and (min-width: 800px) {
-    
-#vendas {
-    max-width: 100%;
-    margin: auto;  
-    padding-bottom: 260px;
-    padding-top: 55px;
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-
-}
-
-#salesSection {
+    max-width: 1200px; /* Limita largura máxima em telas grandes */
+    margin: 0 auto; /* Centraliza em telas grandes */
     display: flex;
     flex-direction: column;
-    justify-content: start;
-    align-items: center;
-    padding: 25px;
+    gap: 25px; /* Espaço entre seções */
 }
 
-
-#clientFilter {
-    display: flex;
-    gap: 10px;
-    justify-content: start;
-    align-items: center;
-    font-size: 12px;
+section {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-#clientFilter input {
-    width: 200px;
-    display: inline;
-    margin-left: 10px;
-    font-size: 12px;
+h2, h3, h4 {
+    color: #333;
+    margin-top: 0;
+    margin-bottom: 15px;
 }
 
-
-#dateFilter {
-    display: flex;
-    gap: 10px;
-    justify-content: start;
-    align-items: center;
-    margin-top: 5px;
+label {
+    display: block;
     margin-bottom: 5px;
-    font-size: 12px;
+    font-weight: bold;
+    color: #555;
 }
 
-#dateFilter select {
-    width: 200px;
-    color: rgb(97, 97, 97);
-    font-size: 12px;
-}
-
-#specificDateFilter {
-    display: flex;
-    gap: 10px;
-    justify-content: start;
-    align-items: center;
-    margin-top: 5px;
-    margin-bottom: 30px;
-    font-size: 12px;
-}
-
-#specificDateFilter input {
-    width: 200px;
-    color: rgb(97, 97, 97);
-    font-size: 12px;
-}
-
-#salesNumbers {
-    position: fixed;
-    bottom: 100px;
-    left: 0px;
-    background-color: var(--secondary-color);
-    color: white;
+input[type="text"],
+input[type="date"],
+input[type="number"],
+select {
     width: 100%;
-    border-top: 2px solid rgba(71, 70, 70, 0.693);
-    padding-top: 10px;
-    z-index: 2;
-    display: flex;
-    flex-direction: row;
-    gap: 25px;
-    padding-left: 25px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Para padding não aumentar largura */
 }
 
-#chart {
+button,
+.btn { /* Estilo base para botões */
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.btn-outline-secondary {
+    background-color: transparent;
+    border: 1px solid #6c757d;
+    color: #6c757d;
+}
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: white;
+}
+.btn-outline-secondary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 0.875em;
+}
+
+.me-2 { margin-right: 0.5rem !important; }
+.ms-2 { margin-left: 0.5rem !important; }
+
+/* --- Seções Específicas (Mobile First) --- */
+
+/* Filtros */
+#filtersSection div {
+    margin-bottom: 15px;
+}
+
+#exportReportButton {
+    text-align: center; /* Centraliza botão no mobile */
+}
+
+/* Resumo e KPIs */
+#summaryAndKpisSection {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#kpisSection {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+#kpisSection p {
+    margin: 5px 0;
+}
+
+#kpisSection div {
+    display: flex;
     align-items: center;
-    padding-bottom: 50px;
+    gap: 5px;
+    flex-wrap: wrap; /* Quebra linha se necessário */
 }
 
+#kpisSection input[type="number"] {
+    width: 60px;
+    padding: 2px 5px;
+    margin-bottom: 0; /* Remove margem inferior padrão */
+}
+
+#summaryAndKpisSection > div:not(#kpisSection):not(#totalCaixa) { /* Seleciona salesNumbers e pagamentosNumbers */
+    display: flex;
+    flex-direction: column; /* Empilha no mobile */
+    gap: 15px;
+}
+
+#salesNumbers, #pagamentosNumbers {
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #e0e0e0;
+}
+
+#salesNumbers p, #pagamentosNumbers p {
+    margin: 5px 0;
+}
+
+#totalCaixa {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 2px solid #666;
+    text-align: center;
+}
+
+#totalCaixa h3 {
+    margin-bottom: 10px;
+}
+
+#totalCaixa p {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #27ae60;
+    margin: 0 0 5px 0;
+}
+
+#totalCaixa small {
+    color: #555;
+    font-size: 0.9em;
+}
+
+/* Listas de Vendas e Pagamentos */
+#salesSection ul, #pagamentosSection ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.individualSale, .individualPagamento {
+    background-color: #fff;
+    padding: 10px 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column; /* Empilha informações no mobile */
+    gap: 5px;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease;
+}
+
+.individualSale:hover, .individualPagamento:hover {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.individualSale span, .individualPagamento span {
+    font-size: 0.95em;
+}
+
+.individualSale span strong, .individualPagamento span strong {
+    color: #444;
+}
+
+/* Paginação */
+.pagination-controls {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.pagination-controls span {
+    margin: 0 10px;
+    font-weight: bold;
+}
+
+/* Modal */
 #modal {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.6);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 100;
+    z-index: 1000;
+    padding: 15px;
+    box-sizing: border-box;
 }
-
 
 #modalContent {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    width: 90%;
-    max-height: 600px;
-    max-width: 350px;
-    position: relative;
-    overflow-y: auto;
-}
-
-#closeModal {
-    background-color: transparent;
-    color: rgb(0, 0, 0);
-    border: none;
-    padding: 10px;
-    cursor: pointer;
-    border-radius: 5px;
-    position: absolute;
-    right: 0px;
-    top: 0px;
-}
-
-.individualSale {
-    background-color: rgb(233, 233, 233);
-    border: none;
-    border-radius: 15px;
-    overflow-x: hidden;
-    width: 400px;
-}
-
-ul {
-    list-style: none;
-    padding: 0;
-}
-
-ul li {
-    background-color: rgb(249, 248, 248);
-    padding: 10px;
-    border: 1px solid #ddd;
-    margin: 5px 0;
-    cursor: pointer;
-    text-align: left;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-ul li:hover {
-    background: #f0f0f0;
-}
-
-#modalButtons {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 20px;
-}
-
-
-#fiadoPaymentsSection {
-    display: flex;
-    flex-direction: column;
-    justify-content: start;
-    align-items: center;
-    border-radius: 10px;
-    padding: 25px;
-    background-color: #f0f0f0;
-    width: 400px;
-    overflow-y: auto;
-}
-
-#fiadoPaymentsSection select {
-    width: 250px;
-    margin-bottom: 5px;
-}
-
-#fiadoPaymentsSection input {
-    width: 250px;
-    margin-bottom: 10px;
-}
-
-#fiadoList {
-    margin: 0px;
-    padding: 0px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    width: 250px;
-}
-
-#fiadoPaymentsSection #fiadoItem {
-    border-radius: 10px;
-    margin: auto;
-    width: 250px;
     background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
 }
 
-#paymentDashboard {
-    background-color: var(--secondary-color);
-    width: 300px;
-    padding: 15px;
-    color: white;
-    border-radius: 10px;
-    margin-top: 15px;
+#closeModal {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.5em; /* Tamanho do ícone */
+    cursor: pointer;
+    color: #888;
+}
+#closeModal:hover {
+    color: #333;
 }
 
-#paymentDashboard h3 {
-    display: none;
+#modalContent h2, #modalContent h3 {
+    margin-bottom: 10px;
 }
 
-#paymentDashboard p {
-    font-weight: 500;
-    text-align: start;
-    
+#modalContent p {
+    margin: 5px 0;
+    line-height: 1.5;
 }
 
-#caixaDia {
-    width: 250px;
-    font-size: 20px;
-    background-color: #ffffff;
-    border: var(--secondary-color) 2px solid;
-    border-radius: 10px;
-    padding: 10px;
-    position: fixed;
-    bottom: 150px;
-    right: 15px;
-    font-weight: 500;
+#modalContent ul {
+    list-style: disc;
+    padding-left: 20px;
+    margin-bottom: 15px;
 }
 
-#chart {
-    margin-bottom: 150px;
+.modalActions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end; /* Alinha botões à direita */
+    flex-wrap: wrap; /* Quebra linha se necessário */
 }
 
+/* --- Media Queries (Tablet e Desktop) --- */
+
+/* Tablet (e telas maiores) */
+@media (min-width: 768px) {
+    #vendas {
+        gap: 30px;
+    }
+
+    /* Organiza filtros e resumo/KPIs lado a lado */
+    #filtersSection, #summaryAndKpisSection {
+       /* flex: 1; /* Ocupa espaço disponível */
+    }
+
+    /* Layout em grid para filtros e resumo/kpis */
+    #vendas {
+        /* Considerar display: grid se o layout ficar complexo */
+    }
+
+    #filtersSection div {
+        /* Pode organizar inputs lado a lado se houver espaço */
+    }
+
+    #exportReportButton {
+        text-align: left; /* Alinha à esquerda em telas maiores */
+    }
+
+    /* Resumo e KPIs lado a lado */
+    #summaryAndKpisSection > div:not(#kpisSection):not(#totalCaixa) { 
+        flex-direction: row; /* Lado a lado */
+        justify-content: space-around; /* Distribui espaço */
+        gap: 20px;
+    }
+
+    #salesNumbers, #pagamentosNumbers {
+        flex: 1; /* Ocupa espaço igual */
+    }
+
+    /* Itens das listas lado a lado */
+    .individualSale, .individualPagamento {
+        flex-direction: row; /* Lado a lado */
+        justify-content: space-between; /* Espaça os itens */
+        align-items: center;
+        gap: 15px;
+    }
+
+    .individualSale span, .individualPagamento span {
+        /* Ajustar largura ou quebra de texto se necessário */
+        white-space: nowrap; /* Evita quebra de linha indesejada */
+        overflow: hidden;
+        text-overflow: ellipsis; /* Adiciona '...' se o texto for muito longo */
+        flex-basis: auto; /* Permite que o flexbox ajuste */
+    }
+    .individualSale span:first-child, .individualPagamento span:first-child { /* Nome do cliente */
+        flex-grow: 1; /* Permite que o nome ocupe mais espaço */
+        min-width: 150px; /* Garante um espaço mínimo */
+        white-space: normal; /* Permite quebra de linha no nome */
+    }
+
 }
+
+/* Desktop (telas ainda maiores) */
+@media (min-width: 1024px) {
+    /* Layout principal pode usar Grid para mais controle */
+    #vendas {
+        display: grid;
+        grid-template-columns: 1fr 2fr; /* Coluna filtros/resumo | Coluna listas */
+        grid-template-areas:
+            "sidebar main";
+        gap: 40px;
+    }
+
+    #filtersSection {
+        grid-area: sidebar; 
+        /* Empilha filtros e resumo/kpis na sidebar */
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+        align-self: start; /* Alinha ao topo da grid */
+    }
+    #summaryAndKpisSection {
+         grid-area: sidebar; /* Coloca abaixo dos filtros */
+         margin-top: 30px; /* Espaço entre filtros e resumo */
+    }
+
+    /* Agrupa listas na área principal */
+    .main-content-area { /* Criar uma div envolvendo salesSection e pagamentosSection no JSX */
+        grid-area: main;
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    #salesSection, #pagamentosSection {
+        /* Estilos mantidos */
+    }
+
+    /* Ajustes finos se necessário */
+    #kpisSection input[type="number"] {
+        width: 70px;
+    }
+}
+

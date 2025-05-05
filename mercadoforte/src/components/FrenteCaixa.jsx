@@ -36,13 +36,14 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   const [cashPayment, setCashPayment] = useState(false)
   const [pixPayment, setPixPayment] = useState(false)
 
-  const Navigate = useNavigate()
 
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
   }, []);
+
+  const Navigate = useNavigate()
 
   const handleSearch = async (e) => {
     let term = e.target.value.trim().toLowerCase();
@@ -126,20 +127,30 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
 
   const addToShoppingList = (product, quantity = 1) => {
     setShoppingList((prevList) => {
-      return prevList.map((item) =>
-        item.nome === product.nome
-          ? { ...item, quantity: item.quantity + quantity }
-          : item
-      ).concat(prevList.some((item) => item.nome === product.nome) ? [] : [{
-        nome: product.nome,
-        preco: parseFloat(product.preco),
-        quantity,
-      }]);
+      const existingProductIndex = prevList.findIndex(item => item.nome === product.nome);
+
+      if (existingProductIndex !== -1) {
+        // Se o produto já estiver na lista, apenas aumenta a quantidade
+        const updatedList = [...prevList];
+        updatedList[existingProductIndex].quantity += quantity;
+        return updatedList;
+      } else {
+        // Se o produto não estiver na lista, adiciona ele com a quantidade
+        return [
+          ...prevList,
+          {
+            nome: product.nome,
+            preco: parseFloat(product.preco),
+            quantity,
+          },
+        ];
+      }
     });
 
-    setSearchResults([]);
-    setSearchTerm('');
-    inputRef.current?.focus();
+    setSearchResults([]);  // Limpa os resultados da busca
+    setSearchTerm('');     // Limpa o campo de pesquisa
+    inputRef.current?.focus();  // Foca novamente no campo de busca
+
   };
 
   useEffect(() => {
@@ -158,6 +169,8 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
     setDiscount(0);               // Reseta o desconto percentual
     setSearchTerm('');            // Limpa o campo de busca
     setSearchResults([]);         // Limpa os resultados de busca
+    window.location.reload();
+
   };
 
 
@@ -166,6 +179,8 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
     setDiscount(percentage);
   };
 
+  // Memoize calculateTotal to avoid unnecessary recalculations if possible
+  // Or ensure its dependencies are stable
   const calculateTotal = () => {
     const subtotal = shoppingList.reduce(
       (total, product) => total + parseFloat(product.preco) * product.quantity,
@@ -179,6 +194,54 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
     return finalTotal.toFixed(2);
   };
 
+  // *** INÍCIO DA CORREÇÃO ***
+  // useEffect para calcular automaticamente o valor de 'fiado' (noPaid)
+  useEffect(() => {
+    const totalCalculado = parseFloat(calculateTotal() || 0);
+    // Use parseFloat para converter os valores dos inputs (que são strings) para números
+    const valorPagoDinheiro = parseFloat(paid || 0);
+    const valorPagoPix = parseFloat(pixPaid || 0);
+
+    let valorFiado = totalCalculado - valorPagoDinheiro - valorPagoPix;
+
+    // Garante que o valor fiado não seja negativo e trata possíveis NaN
+    valorFiado = Math.max(0, valorFiado);
+    // Garante que o fiado não seja maior que o total devido a erros de arredondamento ou lógica
+    valorFiado = Math.min(totalCalculado, valorFiado);
+
+    setNoPaid(valorFiado);
+
+    // Dependências: recalcula sempre que os valores pagos ou o total da compra mudarem
+  }, [paid, pixPaid, shoppingList, extraAmount, discountAmount, discount]);
+
+  // Função ajustada para lidar com a entrada de valores de pagamento (Dinheiro e Pix)
+  const handlePaymentChange = (e, setValue) => {
+    let value = e.target.value;
+
+    // Permite campo vazio
+    if (value === "") {
+      setValue("");
+      return;
+    }
+
+    // Permite apenas números e um ponto decimal com até duas casas decimais
+    // Regex melhorado para lidar com vários formatos de entrada numérica
+    if (/^\d*\.?\d{0,2}$/.test(value)) {
+      // Converte "." para "0."
+      if (value === '.') {
+        value = '0.';
+      }
+      // Remove zeros à esquerda desnecessários (ex: "05" -> "5", mas mantém "0." ou "0")
+      if (value.length > 1 && value.startsWith('0') && !value.startsWith('0.')) {
+        value = value.replace(/^0+/, '');
+        // Se após remover zeros ficar vazio (ex: "00"), volta para "0"
+        if (value === '') value = '0';
+      }
+
+      setValue(value);
+    }
+  };
+  // *** FIM DA CORREÇÃO ***
 
   const saveShoppingButton = () => {
     setSaveShoppingContainer(true)
@@ -189,7 +252,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   }
 
   const handleUser = () => {
-    const localUser = localStorage.getItem('empresaId')
+    const localUser = localStorage.getItem('loginUserName')
     setActiveUser(localUser)
   }
 
@@ -200,6 +263,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   const handlePaymentMethod = (e) => {
     setPaymentMethod(e.target.value)
   }
+
 
   const showPaymentMethod = () => {
     setClienteSection(false)
@@ -222,6 +286,12 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
       setPaymentAmountSection(true)
       setCashPayment(true)
       setPixPayment(true)
+    } else if (paymentMethod === 'Fiado') {
+      setPaymentMethodSection(false)
+      setPaymentAmountSection(true)
+      // Quando for fiado, zerar os pagamentos?
+      setPaid('');
+      setPixPaid('');
     }
 
   }
@@ -239,17 +309,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   const saveShopping = async (e) => {
     e.preventDefault();
     setLoading(true)
-
     try {
-
-      const empresaId = localStorage.getItem('empresaId'); // Supondo que já esteja salvo no localStorage
-
-      if (!empresaId) {
-        console.error("Nenhuma empresa logada.");
-        setLoading(false);
-        return;
-
-      }
       const clientesRef = collection(db, `Empresas/${empresaId}/Clientes`);
 
       // Verifica se o cliente já existe
@@ -281,19 +341,15 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
         });
       }
 
-      // Atualiza a dívida somando o valor de Fiado
-      const newDivida = currentDivida + parseFloat(noPaid);
+      // Atualiza a dívida somando o valor de Fiado calculado pelo useEffect
+      const newDivida = currentDivida + parseFloat(noPaid || 0); // Usa o noPaid do estado
 
-      // Atualiza o cliente com o novo valor da dívida
-
-
-      const finalTotal = calculateTotal();
-      const PagoDinheiro = parseFloat(paid) || 0;
-      const PagoPix = parseFloat(pixPaid) || 0;
+      const finalTotal = parseFloat(calculateTotal() || 0);
+      const PagoDinheiro = parseFloat(paid || 0);
+      const PagoPix = parseFloat(pixPaid || 0);
       const PagoTotal = PagoDinheiro + PagoPix;
 
-
-      const newTotalGasto = totalGasto + parseFloat(finalTotal);
+      const newTotalGasto = totalGasto + finalTotal;
 
       await setDoc(
         doc(clientesRef, clienteId),
@@ -309,7 +365,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
       // Adiciona a compra associando ao cliente
       await addDoc(collection(db, `Empresas/${empresaId}/Vendas`), {
         Lista: shoppingList,
-        TotalVenda: parseFloat(finalTotal),
+        TotalVenda: finalTotal,
         TotalItens: totalItems,
         Cliente: {
           id: clienteId,
@@ -322,10 +378,9 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
         PagoDinheiro: PagoDinheiro,
         PagoPix: PagoPix,
         PagoTotal: PagoTotal,
-        Fiado: parseFloat(noPaid),
+        Fiado: parseFloat(noPaid || 0), // Usa o noPaid do estado
         FormaPagamento: paymentMethod,
       });
-
 
       // Atualiza o estoque dos produtos
       for (const product of shoppingList) {
@@ -359,13 +414,18 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
       setDiscount(0)
       setDiscountAmount(0)
       setExtraAmount(0)
-      setPaid(0)
+      setPaid('') // Limpa como string
+      setPixPaid('') // Limpa como string
       setNoPaid(0)
       setChangeValue(0)
-      setInsertedValue(0)
+      setInsertedValue('') // Limpa como string
       setClienteSection(true)
       setPaymentMethodSection(false)
       setPaymentAmountSection(false)
+      setPaymentMethod('') // Limpa método de pagamento
+      setCashPayment(false)
+      setPixPayment(false)
+
     } catch (error) {
       console.error('Erro ao salvar a venda ou criar cliente:', error);
     } finally {
@@ -375,7 +435,6 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
 
 
 
-  // Função para buscar clientes pelo nome
   // Função para buscar clientes pelo nome
   const handleClientSearch = async (name) => {
     setClientName(name);
@@ -411,78 +470,52 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   };
 
 
-  const handlePaymentChange = (e, setValue, otherValue) => {
-    let value = e.target.value;
+  // Removido handlePixPaid e handlePaid pois handlePaymentChange é usado diretamente
 
-    if (value === "") {
-      setValue("");
-      updateRemaining(
-        setValue === setPaid ? "" : otherValue,
-        setValue === setPixPaid ? "" : otherValue
-      );
-      return;
-    }
+  // useEffect(() => {
+  //   if (insertedValue > paid || insertedValue > pixPaid) {
+  //     setChangeValueModal(true)
+  //   }
 
-    if (/^(\d+(\.\d{0,2})?|\.\d{0,2})$/.test(value)) {
-      if (/^0[0-9]/.test(value)) {
-        value = value.replace(/^0+/, '');
-      }
-
-      setValue(value);
-      updateRemaining(
-        setValue === setPaid ? value : otherValue,
-        setValue === setPixPaid ? value : otherValue
-      );
-    }
-  };
-
-
-  const handlePixPaid = (e) => handlePaymentChange(e, setPixPaid);
-  const handlePaid = (e) => handlePaymentChange(e, setPaid);
-
-
-  useEffect(() => {
-    if (insertedValue > paid || insertedValue > pixPaid) {
-      setChangeValueModal(true)
-    }
-
-    if (noPaid > 0) {
-      setNoPaidModal(true)
-    } else {
-      setNoPaidModal(false)
-    }
-  }, [])
+  //   if (noPaid > 0) {
+  //     setNoPaidModal(true)
+  //   } else {
+  //     setNoPaidModal(false)
+  //   }
+  // }, []) // Este useEffect original tinha uma dependência vazia, o que não parece correto.
+  // Removido pois a lógica de modal pode precisar ser reavaliada.
 
   const handleInsertedValue = (e) => {
     let value = e.target.value;
 
-    // Permitir que o campo fique vazio sem formatar imediatamente
+    // Permitir que o campo fique vazio
     if (value === "") {
       setInsertedValue("");
       return;
     }
 
-    // Permitir apenas números e um único ponto decimal com até duas casas decimais
-    if (/^(\d+(\.\d{0,2})?|\.\d{0,2})$/.test(value)) {
-      // Remove zeros à esquerda, exceto quando o valor é "0" ou começa com "0."
-      if (/^0[0-9]/.test(value)) {
-        value = value.replace(/^0+/, '');
+    // Regex para validar valor inserido (similar ao handlePaymentChange)
+    if (/^\d*\.?\d{0,2}$/.test(value)) {
+      if (value === '.') {
+        value = '0.';
       }
-
+      if (value.length > 1 && value.startsWith('0') && !value.startsWith('0.')) {
+        value = value.replace(/^0+/, '');
+        if (value === '') value = '0';
+      }
       setInsertedValue(value);
     }
   };
 
 
-  const handleChangeValue = () => {
-    if (insertedValue.length > 0) {
-      setChangeValue(insertedValue - paid)
-    }
-  }
-
+  // useEffect para calcular o troco
   useEffect(() => {
-    handleChangeValue()
-  })
+    const valorInserido = parseFloat(insertedValue || 0);
+    const valorPagoDinheiro = parseFloat(paid || 0);
+    // O troco geralmente é calculado sobre o pagamento em dinheiro
+    const troco = valorInserido - valorPagoDinheiro;
+    setChangeValue(Math.max(0, troco)); // Troco não pode ser negativo
+  }, [insertedValue, paid]);
 
 
   useEffect(() => {
@@ -504,42 +537,9 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
 
 
   const logoutUser = () => {
-    localStorage.removeItem('empresaId')
+    localStorage.removeItem('loginUserName')
     Navigate('/')
   }
-
-
-  useEffect(() => {
-    const fetchCompanyName = async () => {
-      if (empresaId) {
-        try {
-          // Se você está buscando na coleção 'Empresas' e não em 'Produtos', a referência deveria ser:
-          const empresaRef = doc(db, 'Empresas', empresaId);  // Aqui está buscando diretamente pela empresa
-          const empresaDoc = await getDoc(empresaRef);
-
-          if (empresaDoc.exists()) {
-            setCompanyName(empresaDoc.data().nome);  // Atualiza o nome da empresa
-          } else {
-            console.log('Empresa não encontrada');
-          }
-        } catch (error) {
-          console.error('Erro ao buscar nome da empresa:', error);
-        }
-      }
-    };
-
-    fetchCompanyName();
-  }, [empresaId]);
-
-  const updateRemaining = (cash, pix) => {
-    const total = calculateTotal();
-    const cashValue = parseFloat(cash) || 0;
-    const pixValue = parseFloat(pix) || 0;
-
-    const remaining = total - (cashValue + pixValue);
-    setNoPaid(remaining);
-  };
-
 
 
   if (loading) {
@@ -551,21 +551,22 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
 
   return (
     <div id="frenteCaixaContainer">
-      {/**<span id='activeUser'>
+      {/*
+      <span id='activeUser'>
         Operador: <strong>{activeUser}</strong>
         <span>
           <button className='material-symbols-outlined' onClick={logoutUser}>logout</button>
         </span>
-      </span>**/}
-
-      <span id='companyTag'>
+      </span><span id='companyTag'>
         {companyName} <button id='logoutButton' className='material-symbols-outlined' onClick={logoutUser}>logout</button>
       </span>
+      */}
+      
       <main id="frenteCaixa">
         <section id="shoppingList" style={{ maxHeight: '550px', overflowY: 'auto' }}>
           {shoppingList.map((product, index) => (
             <p className="product" key={index}>
-              {product.nome} - {product.quantity} {product.nome === 'farinha' || product.nome === 'calabresa sadia kg' ? 'kg' : 'un'}
+              {product.nome} - {product.quantity} {product.nome === 'Farinha' || product.nome === 'Calabresa Sadia kg' ? 'kg' : 'un'}
               <span>
                 R${(product.preco * product.quantity).toFixed(2)}
                 <button
@@ -610,11 +611,11 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
             </div>
           </section>
           <section id="checkout">
-            <div id="totalValue">
+            <p id="totalValue">
               <strong>
                 <span>R${calculateTotal()}</span>
               </strong>
-            </div>
+            </p>
             <div id='extraValues'>
               <input className='form-control'
                 type="number"
@@ -651,18 +652,6 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
             <div id='background'>
               <div id='saveShoppingContainer'>
                 <button id='closeShop' onClick={closeShoppingContainer} className='material-symbols-outlined'>close</button>
-                {/**<div>
-                  <h2>Venda a finalizar</h2>
-                  <div id='listCheck'>
-                    {
-                      shoppingList.map((product, index) => (
-                        <li key={index}>
-                          {product.quantity}x {product.nome}
-                        </li>
-                      ))
-                    }
-                  </div>
-                </div>**/}
                 <div>
                   <h2>Dados do Cliente</h2>
                   <form onSubmit={saveShopping} id='clientData'>
@@ -725,49 +714,64 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                     {paymentAmountSection && (
                       <div>
                         {cashPayment && (
-                            <div>
-                              <label htmlFor="paid">Quanto o cliente vai pagar em dinheiro?</label>
-                              <input
-                                type="text"
-                                value={paid || ""}
-                                onChange={(e) => handlePaymentChange(e, setPaid, pixPaid)}
-                              />
-                            </div>
-                          )
+                          <div>
+                            <label htmlFor="paid">Quanto o cliente vai pagar em dinheiro?</label>
+                            {/* *** CORREÇÃO INPUT *** */}
+                            <input
+                              type="text" // Mudar para text para melhor UX com decimais
+                              className='form-control'
+                              value={paid} // Usar o estado diretamente (string)
+                              onChange={(e) => handlePaymentChange(e, setPaid)}
+                              placeholder="0.00"
+                            />
+                          </div>
+                        )
                         }
                         {pixPayment && (
                           <div>
                             <label htmlFor="pixPayment">Quanto o cliente vai pagar em PIX?</label>
+                            {/* *** CORREÇÃO INPUT *** */}
                             <input
-                              type="text"
-                              value={pixPaid || ""}
-                              onChange={(e) => handlePaymentChange(e, setPixPaid, paid)}
+                              type="text" // Mudar para text
+                              className='form-control'
+                              value={pixPaid} // Usar o estado diretamente (string)
+                              onChange={(e) => handlePaymentChange(e, setPixPaid)}
+                              placeholder="0.00"
                             />
                           </div>
                         )}
-                        <label htmlFor="insertedValue">Qual o valor inserido?</label>
-                        <input type="number" name="insertedValue" id="insertedValue" className='form-control'
-                          value={insertedValue} onChange={handleInsertedValue} disabled={paymentMethod.length === 0} />
-                        <p className='changeValue' onChange={handleChangeValue}> <strong><i>O troco é de R${(changeValue.toFixed(2))}</i></strong></p>
+                        {/* Campo 'Valor Inserido' e 'Troco' mantidos como estavam, mas agora usam a função de cálculo de troco via useEffect */}
+                        {(cashPayment || paymentMethod === 'Dinheiro') && (
+                          <>
+                            <label htmlFor="insertedValue">Qual o valor inserido (Dinheiro)?</label>
+                            <input type="text" name="insertedValue" id="insertedValue" className='form-control'
+                              value={insertedValue} onChange={handleInsertedValue} placeholder="0.00" />
+                            <p className='changeValue'> <strong><i>O troco é de R${(changeValue.toFixed(2))}</i></strong></p>
+                          </>
+                        )}
                         <div>
                           <label htmlFor="noPaid">O fiado será:</label>
+                          {/* *** CORREÇÃO INPUT *** */}
                           <input
-                            type="text"
+                            type="text" // Mudar para text
                             name="noPaid"
-                            value={(parseFloat(noPaid) || 0).toFixed(2)
-                            } readOnly
+                            value={noPaid.toFixed(2)} // Formatar para exibição
+                            readOnly // Manter readOnly
                             className="form-control"
                           />
                           <br />
                           <p id='calculateTotal'>Total: R${calculateTotal()}</p> <br />
                         </div>
-                        <button className="btn btn-dark" type="submit" disabled={!(
-                          parseFloat(paid) > 0 ||
-                          parseFloat(pixPaid) > 0 ||
-                          parseFloat(noPaid) > 0
-                        )}>Finalizar Venda</button>
+                        {/* Lógica do botão Finalizar Venda ajustada para considerar o total */}
+                        <button className="btn btn-dark" type="submit" disabled={loading || (parseFloat(paid || 0) + parseFloat(pixPaid || 0) + noPaid) < parseFloat(calculateTotal() || 0) - 0.001}>
+                          {loading ? 'Finalizando...' : 'Finalizar Venda'}
+                        </button>
                         <button type='button' onClick={backPaymentAmount} className='btn btn-secondary buttonArrowBack'><span className='material-symbols-outlined'>arrow_back_ios</span></button>
                       </div>)}
+
+
+
+
                   </form>
                 </div>
               </div>
@@ -780,3 +784,4 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
 };
 
 export default FrenteCaixa;
+

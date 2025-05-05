@@ -1,322 +1,444 @@
-
-import React, { useState, useEffect } from 'react';
-import { collection, query, getDocs, where, deleteDoc, doc, Timestamp } from 'firebase/firestore';
+import React, { useState, useEffect, useMemo } from 'react';
+import { collection, query, getDocs, where, deleteDoc, doc, Timestamp, orderBy } from 'firebase/firestore';
 import { db } from '../firebaseConfig'; // Substitua pelo caminho do seu arquivo de configuração do Firebase
 import LoadingSpinner from '../components/LoadingSpinner.jsx';
-import { jsPDF } from 'jspdf'; // Importando o jsPDF
-import 'jspdf-autotable'; // Extensão para tabelas
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 import GraficoPizza from '../components/GraficoPizza.jsx';
-import '../styles/Vendas.css'
+import '../styles/Vendas.css';
 
+// Componente de Paginação reutilizável
+const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+    const handlePrevious = () => {
+        if (currentPage > 1) {
+            onPageChange(currentPage - 1);
+        }
+    };
+
+    const handleNext = () => {
+        if (currentPage < totalPages) {
+            onPageChange(currentPage + 1);
+        }
+    };
+
+    if (totalPages <= 1) {
+        return null; // Não mostra paginação se houver apenas uma página
+    }
+
+    return (
+        <div className="pagination-controls" style={{ marginTop: '15px', textAlign: 'center' }}>
+            <button onClick={handlePrevious} disabled={currentPage === 1} className="btn btn-sm btn-outline-secondary me-2">
+                Anterior
+            </button>
+            <span>Página {currentPage} de {totalPages}</span>
+            <button onClick={handleNext} disabled={currentPage === totalPages} className="btn btn-sm btn-outline-secondary ms-2">
+                Próxima
+            </button>
+        </div>
+    );
+};
+
+
+// Função auxiliar para obter o intervalo de datas com base no filtro
+const getDateRange = (filter) => {
+    const now = new Date();
+    let startDate = new Date();
+    let endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
+
+    switch (filter.type) {
+        case 'today':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+            break;
+        case 'yesterday':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
+            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+            break;
+        case 'last7days':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6, 0, 0, 0, 0);
+            break;
+        case 'last15days':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 14, 0, 0, 0, 0);
+            break;
+        case 'last30days':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29, 0, 0, 0, 0);
+            break;
+        case 'last60days':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 59, 0, 0, 0, 0);
+            break;
+        case 'last90days':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 89, 0, 0, 0, 0);
+            break;
+        case 'last180days':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 179, 0, 0, 0, 0);
+            break;
+        case 'last365days':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 364, 0, 0, 0, 0);
+            break;
+        case 'specific':
+            if (filter.specificDate) {
+                const [year, month, day] = filter.specificDate.split('-');
+                startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+                endDate = new Date(year, month - 1, day + 1, 0, 0, 0, 0);
+            } else {
+                startDate = null;
+                endDate = null;
+            }
+            break;
+        case 'allTime':
+        default:
+            startDate = null;
+            endDate = null;
+            break;
+    }
+
+    const startTimestamp = startDate ? Timestamp.fromDate(startDate) : null;
+    const endTimestamp = endDate ? Timestamp.fromDate(endDate) : null;
+  
+    const periodDescription = () => {
+        if (filter.type === 'today') return `Hoje (${now.toLocaleDateString('pt-BR')})`;
+        if (filter.type === 'yesterday') {
+            const yesterday = new Date(now);
+            yesterday.setDate(now.getDate() - 1);
+            return `Ontem (${yesterday.toLocaleDateString('pt-BR')})`;
+        }
+        if (filter.type === 'specific' && filter.specificDate) {
+            const [year, month, day] = filter.specificDate.split('-');
+            const displayDate = new Date(Date.UTC(year, month - 1, day));
+            return `Data Específica (${displayDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' })})`;
+        }
+        if (filter.type === 'allTime') return 'Todo o Período';
+        if (startDate && endDate) {
+            const displayEndDate = new Date(endDate.getTime() - (24 * 60 * 60 * 1000));
+            return `De ${startDate.toLocaleDateString('pt-BR')} a ${displayEndDate.toLocaleDateString('pt-BR')}`;
+        }
+        return 'Período Indefinido';
+    };
+
+    return { startTimestamp, endTimestamp, periodDescription: periodDescription() };
+};
+
+const ITEMS_PER_PAGE = 5;
 
 const Vendas = ({ onTotalChange }) => {
-    const [sales, setSales] = useState([]); // Lista de vendas
-    const [filteredSales, setFilteredSales] = useState([]); // Lista de vendas filtradas
-    const [filterName, setFilterName] = useState(''); // Nome do cliente para filtrar
-    const [selectedSale, setSelectedSale] = useState(null); // Venda selecionada
-    const [showModal, setShowModal] = useState(false); // Controla a exibição do modal
+    const [allSales, setAllSales] = useState([]);
+    const [allPagamentos, setAllPagamentos] = useState([]);
+    const [filteredSales, setFilteredSales] = useState([]);
+    const [filteredPagamentos, setFilteredPagamentos] = useState([]); // Mantido para consistência, mas dados vêm de allPagamentos
+    const [filterName, setFilterName] = useState('');
+    const [dateFilter, setDateFilter] = useState({ type: 'today', specificDate: '' });
+    const [selectedSale, setSelectedSale] = useState(null);
+    const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [salesValue, setSalesValue] = useState('')
-    const [timeFilter, setTimeFilter] = useState(1); // Por padrão, dia atual
-    const [fiadoValue, setFiadoValue] = useState(0); // Total de Fiado
-
-    const [totalFiadoPix, setTotalFiadoPix] = useState(0);
-    const [totalFiadoDinheiro, setTotalFiadoDinheiro] = useState(0);
-    const [filterDate, setFilterDate] = useState('');
-    const [year, month, day] = filterDate.split('-');
-    const selectedDate = new Date(year, month - 1, day); // Corrige fuso (meses começam em 0)
     const empresaId = localStorage.getItem('empresaId');
-    const [pixTotal, setPixTotal] = useState(0);
-    const [dinheiroTotal, setDinheiroTotal] = useState(0);
+    const [currentPeriodDescription, setCurrentPeriodDescription] = useState('');
 
+    // Totais
+    const [totalSalesValue, setTotalSalesValue] = useState(0);
+    const [totalFiadoValue, setTotalFiadoValue] = useState(0);
+    const [totalSalesDinheiro, setTotalSalesDinheiro] = useState(0);
+    const [totalSalesPix, setTotalSalesPix] = useState(0);
+    const [totalPagamentosDinheiro, setTotalPagamentosDinheiro] = useState(0);
+    const [totalPagamentosPix, setTotalPagamentosPix] = useState(0);
+    const [totalPagamentosGeral, setTotalPagamentosGeral] = useState(0);
+    const [totalEmCaixa, setTotalEmCaixa] = useState(0);
 
+    // KPIs
+    const [profitMargin, setProfitMargin] = useState(30);
+    const [estimatedProfit, setEstimatedProfit] = useState(0);
+    const [fiadoPercentage, setFiadoPercentage] = useState(0);
 
+    // Paginação
+    const [salesCurrentPage, setSalesCurrentPage] = useState(1);
+    const [pagamentosCurrentPage, setPagamentosCurrentPage] = useState(1);
 
-    // Função para buscar todas as vendas
     useEffect(() => {
-        setLoading(true);
-        const fetchSales = async () => {
+        const fetchData = async () => {
+            if (!empresaId) return;
+            setLoading(true);
+            const { startTimestamp, endTimestamp, periodDescription } = getDateRange(dateFilter);
+            setCurrentPeriodDescription(periodDescription);
             try {
                 const salesRef = collection(db, `Empresas/${empresaId}/Vendas`);
-                const querySnapshot = await getDocs(salesRef);
-                const salesList = [];
-                querySnapshot.forEach((doc) => {
-                    salesList.push({ id: doc.id, ...doc.data() });
-                });
-                setSales(salesList);
-                setFilteredSales(salesList);
-                const totalSalesValue = salesList.reduce((acc, sale) => acc + sale.TotalVenda, 0);
-                setSalesValue(totalSalesValue);
+                let salesQuery = query(salesRef, orderBy("Data", "desc"));
+                if (startTimestamp) salesQuery = query(salesQuery, where("Data", ">=", startTimestamp));
+                if (endTimestamp) salesQuery = query(salesQuery, where("Data", "<", endTimestamp));
+                const salesSnapshot = await getDocs(salesQuery);
+                const salesList = salesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setAllSales(salesList);
+
+                const pagamentosRef = collection(db, `Empresas/${empresaId}/Pagamentos`);
+                let pagamentosQuery = query(pagamentosRef, orderBy("data", "desc"));
+                if (startTimestamp) pagamentosQuery = query(pagamentosQuery, where("data", ">=", startTimestamp));
+                if (endTimestamp) pagamentosQuery = query(pagamentosQuery, where("data", "<", endTimestamp));
+                const pagamentosSnapshot = await getDocs(pagamentosQuery);
+                const pagamentosList = pagamentosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setAllPagamentos(pagamentosList);
+                setFilteredPagamentos(pagamentosList); // Atualiza ambos para consistência inicial
 
             } catch (error) {
-                console.error('Erro ao buscar no Firestore:', error);
+                console.error('Erro ao buscar dados no Firestore:', error);
+                setAllSales([]);
+                setAllPagamentos([]);
+                setFilteredPagamentos([]);
             } finally {
                 setLoading(false);
             }
         };
+        fetchData();
+    }, [dateFilter, empresaId]);
 
-        fetchSales();
-    }, []);
-
+    // Filtro de nome para vendas (client-side)
     useEffect(() => {
-        let filtered = sales;
-
+        let nameFiltered = allSales;
         if (filterName.trim() !== '') {
-            filtered = filtered.filter(sale =>
+            nameFiltered = nameFiltered.filter(sale =>
                 sale.Cliente?.nome?.toLowerCase().includes(filterName.toLowerCase())
             );
         }
+        setFilteredSales(nameFiltered);
+        setSalesCurrentPage(1);
+    }, [allSales, filterName]);
 
+    // Cálculo de totais e KPIs de Vendas
+    useEffect(() => {
+        const totalVendas = filteredSales.reduce((acc, sale) => acc + (sale.TotalVenda || 0), 0);
+        const totalFiado = filteredSales.reduce((acc, sale) => acc + (sale.Fiado || 0), 0);
+        const totalDinheiro = filteredSales.reduce((acc, sale) => acc + (parseFloat(sale.PagoDinheiro) || 0), 0);
+        const totalPix = filteredSales.reduce((acc, sale) => acc + (parseFloat(sale.PagoPix) || 0), 0);
+        setTotalSalesValue(totalVendas);
+        setTotalFiadoValue(totalFiado);
+        setTotalSalesDinheiro(totalDinheiro);
+        setTotalSalesPix(totalPix);
+        const percentage = totalVendas > 0 ? (totalFiado / totalVendas) * 100 : 0;
+        setFiadoPercentage(percentage);
+    }, [filteredSales]);
 
-        if (filterDate) {
-            const [year, month, day] = filterDate.split('-');
-            const selectedDate = new Date(year, month - 1, day);
-
-            const startOfDay = new Date(selectedDate);
-            startOfDay.setHours(0, 0, 0, 0);
-
-            const endOfDay = new Date(selectedDate);
-            endOfDay.setHours(23, 59, 59, 999);
-
-            filtered = filtered.filter(sale => {
-                if (!sale.Data || typeof sale.Data.toDate !== 'function') return false;
-
-                const saleTimestamp = sale.Data.toDate();
-                return saleTimestamp >= startOfDay && saleTimestamp <= endOfDay;
-            });
+    // Cálculo de totais de Pagamentos
+    useEffect(() => {
+        const totalGeral = allPagamentos.reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
+        const totalPixPg = allPagamentos
+            .filter(p => p.formaPagamento?.toLowerCase() === "pix")
+            .reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
+        const totalDinheiroPg = allPagamentos
+            .filter(p => p.formaPagamento?.toLowerCase() === "dinheiro")
+            .reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
+        setTotalPagamentosGeral(totalGeral);
+        setTotalPagamentosPix(totalPixPg);
+        setTotalPagamentosDinheiro(totalDinheiroPg);
+        if (onTotalChange) {
+            onTotalChange(totalGeral);
         }
+        setPagamentosCurrentPage(1);
+    }, [allPagamentos, onTotalChange]);
 
-        // Ordena por data/hora decrescente
-        filtered.sort((a, b) => {
-            const dateA = a.Data?.toDate?.();
-            const dateB = b.Data?.toDate?.();
-            if (!dateA || !dateB) return 0;
-            return dateB - dateA;
-        });
-
-        setFilteredSales(filtered);
-    }, [sales, filterName, filterDate]);
-
-
-
+    // Cálculo Total em Caixa
     useEffect(() => {
-        const totalDinheiro = filteredSales.reduce((acc, sale) => {
-            return acc + (parseFloat(sale.PagoDinheiro) || 0);
-        }, 0);
-        setDinheiroTotal(totalDinheiro);
-    }, [filteredSales]);
+        const calculatedTotalCaixa = totalSalesDinheiro + totalSalesPix + totalPagamentosGeral;
+        setTotalEmCaixa(calculatedTotalCaixa);
+    }, [totalSalesDinheiro, totalSalesPix, totalPagamentosGeral]);
 
+    // Cálculo Lucro Estimado
     useEffect(() => {
-        const totalPix = filteredSales.reduce((acc, sale) => {
-            return acc + (parseFloat(sale.PagoPix) || 0);
-        }, 0);
-        setPixTotal(totalPix);
-    }, [filteredSales]);
+        const profit = totalSalesValue * (profitMargin / 100);
+        setEstimatedProfit(profit);
+    }, [totalSalesValue, profitMargin]);
 
+    // Lógica para obter itens da página atual
+    const currentSales = useMemo(() => {
+        const firstPageIndex = (salesCurrentPage - 1) * ITEMS_PER_PAGE;
+        const lastPageIndex = firstPageIndex + ITEMS_PER_PAGE;
+        return filteredSales.slice(firstPageIndex, lastPageIndex);
+    }, [filteredSales, salesCurrentPage]);
 
+    const currentPagamentos = useMemo(() => {
+        const firstPageIndex = (pagamentosCurrentPage - 1) * ITEMS_PER_PAGE;
+        const lastPageIndex = firstPageIndex + ITEMS_PER_PAGE;
+        return allPagamentos.slice(firstPageIndex, lastPageIndex);
+    }, [allPagamentos, pagamentosCurrentPage]);
 
-    const filterByDateRange = (days) => {
-        const now = new Date();
-        if (days === 1) {
-            const startOfToday = new Date(
-                now.getFullYear(),
-                now.getMonth(),
-                now.getDate(),
-                0, 0, 0, 0
-            );
-            const endOfToday = new Date(
-                now.getFullYear(),
-                now.getMonth(),
-                now.getDate() + 1,
-                0, 0, 0, 0
-            );
+    // Calcula total de páginas
+    const salesTotalPages = Math.ceil(filteredSales.length / ITEMS_PER_PAGE);
+    const pagamentosTotalPages = Math.ceil(allPagamentos.length / ITEMS_PER_PAGE);
 
-            const filtered = sales.filter((sale) => {
-                const saleDate = new Date(sale.Data.seconds * 1000);
-                return saleDate >= startOfToday && saleDate < endOfToday;
-            });
-            setFilteredSales(filtered);
-        } else if (days === 0) {
-            // Filtro para ontem
-            const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 5, 0, 0);
-            const endOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 5, 0, 0);
-
-            const filtered = sales.filter((sale) => {
-                const saleDate = new Date(sale.Data.seconds * 1000);
-                return saleDate >= startOfYesterday && saleDate < endOfYesterday;
-            });
-            setFilteredSales(filtered);
-        } else {
-            const filtered = sales.filter((sale) => {
-                const saleDate = new Date(sale.Data.seconds * 1000);
-                const diffTime = Math.abs(now - saleDate);
-                const diffDays = diffTime / (1000 * 60 * 60 * 24);
-                return diffDays <= days;
-            });
-            filtered.sort((a, b) => {
-                const dateA = a.Data?.toDate?.();
-                const dateB = b.Data?.toDate?.();
-
-                if (!dateA || !dateB) return 0;
-                return dateB - dateA; // ordem decrescente
-            });
-            setFilteredSales(filtered);
+    // Handlers
+    const handleFilterNameChange = (e) => setFilterName(e.target.value);
+    const handleDateFilterChange = (e) => {
+        const newType = e.target.value;
+        setDateFilter(prev => ({ ...prev, type: newType, specificDate: newType === 'specific' ? prev.specificDate : '' }));
+        setSalesCurrentPage(1);
+        setPagamentosCurrentPage(1);
+    };
+    const handleSpecificDateChange = (e) => {
+        setDateFilter(prev => ({ ...prev, type: 'specific', specificDate: e.target.value }));
+        setSalesCurrentPage(1);
+        setPagamentosCurrentPage(1);
+    };
+    const openSaleDetails = (sale) => { setSelectedSale(sale); setShowModal(true); };
+    const closeModal = () => { setSelectedSale(null); setShowModal(false); };
+    const handleProfitMarginChange = (e) => {
+        const value = e.target.value;
+        if (/^\d*$/.test(value) && value <= 100) {
+            setProfitMargin(Number(value) || 0);
         }
-    };
-
-    useEffect(() => {
-        filterByDateRange(timeFilter);
-    }, [timeFilter, sales]);
-
-    useEffect(() => {
-        const totalSalesValue = filteredSales.reduce((acc, sale) => acc + sale.TotalVenda, 0);
-        setSalesValue(totalSalesValue);
-    }, [filteredSales]);
-
-    useEffect(() => {
-        const totalFiadoValue = filteredSales.reduce((acc, sale) => acc + (sale.Fiado || 0), 0);
-
-        setFiadoValue(totalFiadoValue);
-
-    }, [filteredSales]);
-
-    const handleFilter = (name) => {
-        setFilterName(name);
-        if (name.trim() === '') {
-            setFilteredSales(sales);
-        } else {
-            const filtered = sales.filter((sale) =>
-                sale.Cliente.nome.toLowerCase().includes(name.toLowerCase())
-            );
-            setFilteredSales(filtered);
-        }
-    };
-
-    const openSaleDetails = (sale) => {
-        setSelectedSale(sale);
-        setShowModal(true);
-    };
-
-    const closeModal = () => {
-        setSelectedSale(null);
-        setShowModal(false);
     };
 
     const handleDeleteSale = async () => {
         if (selectedSale) {
             try {
+                setLoading(true);
                 const saleDocRef = doc(db, `Empresas/${empresaId}/Vendas`, selectedSale.id);
                 await deleteDoc(saleDocRef);
-                setSales(sales.filter((sale) => sale.id !== selectedSale.id));
-                setFilteredSales(filteredSales.filter((sale) => sale.id !== selectedSale.id));
+                setAllSales(prev => prev.filter(sale => sale.id !== selectedSale.id));
                 closeModal();
                 alert('Venda excluída com sucesso!');
             } catch (error) {
                 console.error('Erro ao excluir a venda:', error);
                 alert('Erro ao excluir a venda!');
+            } finally {
+                setLoading(false);
             }
         }
     };
 
-    // Função para exportar venda selecionada como PDF
-    const exportPDF = () => {
+    // *** FUNÇÃO exportSalePDF IMPLEMENTADA ***
+    const exportSalePDF = () => {
         if (!selectedSale) return;
-
+        
         const doc = new jsPDF();
-        doc.text('Minimercado Sagrada Família', 14, 10);
+        const margin = 14;
+        let currentY = 20;
+
+        // Título
+        doc.setFontSize(16);
+        doc.text('Detalhes da Venda', margin, currentY);
+        currentY += 10;
+
+        // Dados Principais (usando autoTable para melhor formatação)
+        doc.setFontSize(10);
+        const saleDetailsHeader = [["Cliente", "Telefone", "Data", "Total", "Fiado", "Operador"]];
+        const saleDetailsBody = [[
+            selectedSale.Cliente?.nome || 'N/A',
+            selectedSale.Cliente?.telefone || 'N/A',
+            selectedSale.Data?.seconds ? new Date(selectedSale.Data.seconds * 1000).toLocaleString('pt-BR') : 'N/A',
+            `R$ ${(selectedSale.TotalVenda || 0).toFixed(2).replace('.', ',')}`,
+            `R$ ${(selectedSale.Fiado || 0).toFixed(2).replace('.', ',')}`,
+            selectedSale.Operador || 'N/A'
+        ]];
 
         doc.autoTable({
-            head: [['Cliente', 'Telefone', 'Data', 'Total', 'Fiado', 'Operador']],
-            body: [[
-                selectedSale.Cliente.nome,
-                selectedSale.Cliente.telefone,
-                new Date(selectedSale.Data.seconds * 1000).toLocaleString(),
-                `R$ ${selectedSale.TotalVenda}`,
-                `R$ ${selectedSale.Fiado || 0}`,
-                selectedSale.Operador
-            ]]
+            head: saleDetailsHeader,
+            body: saleDetailsBody,
+            startY: currentY,
+            theme: 'grid',
+            headStyles: { fillColor: [70, 70, 70] }, // Cor escura para cabeçalho
+            styles: { fontSize: 9 }
+        });
+        currentY = doc.lastAutoTable.finalY + 10;
+
+        // Pagamentos (Dinheiro/Pix)
+        doc.text(`Pago em Dinheiro: R$ ${(selectedSale.PagoDinheiro || 0).toFixed(2).replace('.', ',')}`, margin, currentY);
+        currentY += 7;
+        doc.text(`Pago em Pix: R$ ${(selectedSale.PagoPix || 0).toFixed(2).replace('.', ',')}`, margin, currentY);
+        currentY += 10;
+
+        // Itens da Venda
+        doc.setFontSize(12);
+        doc.text("Itens:", margin, currentY);
+        currentY += 7;
+        doc.setFontSize(9);
+
+        const itemsHeader = [["Qtd", "Nome", "Preço Unit.", "Total Item"]];
+        const itemsBody = (selectedSale.Lista || []).map(item => [
+            item.quantity,
+            item.nome || 'N/A',
+            `R$ ${(item.preco || 0).toFixed(2).replace('.', ',')}`,
+            `R$ ${((item.quantity || 0) * (item.preco || 0)).toFixed(2).replace('.', ',')}`
+        ]);
+
+        doc.autoTable({
+            head: itemsHeader,
+            body: itemsBody,
+            startY: currentY,
+            theme: 'striped',
+            headStyles: { fillColor: [22, 160, 133] }, // Verde para itens
+            styles: { fontSize: 8 }
         });
 
-        selectedSale.Lista.forEach((item, i) => {
-            doc.setFontSize(10);
-            doc.text(`${item.quantity}x ${item.nome} - R$ ${item.preco.toFixed(2)}`, 14, 60 + i * 10);
-        });
-
-        doc.save(`Venda_${selectedSale.Cliente.nome}.pdf`);
+        // Nome do Arquivo
+        const filename = `Venda_${selectedSale.Cliente?.nome?.replace(/\s+/g, '_') || 'Cliente'}_${selectedSale.id.substring(0, 5)}.pdf`;
+        doc.save(filename);
     };
 
+    const exportReportPDF = () => {
+        const doc = new jsPDF();
+        const today = new Date().toLocaleDateString('pt-BR');
+        const pageTitle = `Relatório de Vendas e Pagamentos Fiado`;
+        const periodText = `Período: ${currentPeriodDescription}`;
+        const generatedDateText = `Gerado em: ${today}`;
 
-    // ---------------------------------------------------- //
+        doc.setFontSize(18);
+        doc.text(pageTitle, 14, 20);
+        doc.setFontSize(10);
+        doc.text(periodText, 14, 28);
+        doc.text(generatedDateText, 14, 34);
 
-    const [pagamentos, setPagamentos] = useState([]);
-    const [filtro, setFiltro] = useState("hoje");
-    const [dataEspecifica, setDataEspecifica] = useState("");
+        doc.setFontSize(12);
+        doc.text("Resumo e KPIs", 14, 45);
+        doc.setFontSize(10);
+        const summaryText = [
+            `KPIs:`,
+            `  - Nº Vendas: ${filteredSales.length}`,
+            `  - Nº Pagamentos Fiado: ${allPagamentos.length}`,
+            `  - % Vendas Fiado: ${fiadoPercentage.toFixed(1)}%`,
+            `  - Lucro Estimado (${profitMargin}%): R$ ${estimatedProfit.toFixed(2).replace('.', ',')}`,
+            ` `,
+            `Vendas:`,
+            `  - Total Vendido: R$ ${totalSalesValue.toFixed(2).replace('.', ',')}`,
+            `  - Total Fiado Gerado: R$ ${totalFiadoValue.toFixed(2).replace('.', ',')}`,
+            `  - Recebido (Dinheiro): R$ ${totalSalesDinheiro.toFixed(2).replace('.', ',')}`,
+            `  - Recebido (Pix): R$ ${totalSalesPix.toFixed(2).replace('.', ',')}`,
+            `  - Recebido (Total Vendas): R$ ${(totalSalesDinheiro + totalSalesPix).toFixed(2).replace('.', ',')}`,
+            `Pagamentos de Fiado:`,
+            `  - Total Recebido: R$ ${totalPagamentosGeral.toFixed(2).replace('.', ',')}`,
+            `  - Recebido (Dinheiro): R$ ${totalPagamentosDinheiro.toFixed(2).replace('.', ',')}`,
+            `  - Recebido (Pix): R$ ${totalPagamentosPix.toFixed(2).replace('.', ',')}`,
+            ` `,
+            `>> TOTAL EM CAIXA (Vendas Din/Pix + Pag. Fiado): R$ ${totalEmCaixa.toFixed(2).replace('.', ',')} <<`
+        ];
+        doc.text(summaryText, 14, 52);
+        let startY = 52 + (summaryText.length * 5) + 5;
 
-    useEffect(() => {
-        const fetchPagamentos = async () => {
-            const pagamentosRef = collection(db, `Empresas/${empresaId}/Pagamentos`);
-            const now = new Date();
-            let inicio;
-            let fim = new Date();
+        doc.setFontSize(12);
+        doc.text("Vendas Detalhadas", 14, startY);
+        startY += 7;
+        const salesTableColumns = ["Data", "Cliente", "Valor Total", "Fiado", "Pago Din.", "Pago Pix", "FP"];
+        const salesTableRows = filteredSales.map(sale => [
+            sale.Data?.seconds ? new Date(sale.Data.seconds * 1000).toLocaleString('pt-BR') : 'N/A',
+            sale.Cliente?.nome || 'N/A',
+            `R$ ${sale.TotalVenda?.toFixed(2) || '0.00'}`,
+            `R$ ${(sale.Fiado || 0).toFixed(2)}`,
+            `R$ ${(sale.PagoDinheiro || 0).toFixed(2)}`,
+            `R$ ${(sale.PagoPix || 0).toFixed(2)}`,
+            sale.FormaPagamento || 'N/A'
+        ]);
+        doc.autoTable({ head: [salesTableColumns], body: salesTableRows, startY: startY, theme: 'grid', headStyles: { fillColor: [22, 160, 133] }, styles: { fontSize: 8 }, columnStyles: { 0: { cellWidth: 35 }, 1: { cellWidth: 40 } } });
+        startY = doc.lastAutoTable.finalY + 10;
 
-            switch (filtro) {
-                case "hoje":
-                    inicio = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                    break;
-                case "ontem":
-                    inicio = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-                    fim = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                    break;
-                case "7dias":
-                    inicio = new Date(now);
-                    inicio.setDate(inicio.getDate() - 7);
-                    break;
-                case "30dias":
-                    inicio = new Date(now);
-                    inicio.setDate(inicio.getDate() - 30);
-                    break;
-                case "data":
-                    if (!dataEspecifica) return;
-                    inicio = new Date(dataEspecifica);
-                    fim = new Date(dataEspecifica);
-                    fim.setDate(fim.getDate() + 1);
-                    break;
-                default:
-                    return;
-            }
+        doc.setFontSize(12);
+        doc.text("Pagamentos de Fiado Recebidos", 14, startY);
+        startY += 7;
+        const pagamentosTableColumns = ["Data", "Cliente", "Valor", "Forma Pagamento"];
+        const pagamentosTableRows = allPagamentos.map(p => [
+            p.data?.seconds ? new Date(p.data.seconds * 1000).toLocaleString('pt-BR') : 'N/A',
+            p.clienteNome || 'N/A',
+            `R$ ${(Number(p.valor) || 0).toFixed(2)}`,
+            p.formaPagamento || 'N/A'
+        ]);
+        doc.autoTable({ head: [pagamentosTableColumns], body: pagamentosTableRows, startY: startY, theme: 'grid', headStyles: { fillColor: [41, 128, 185] }, styles: { fontSize: 8 }, columnStyles: { 0: { cellWidth: 35 }, 1: { cellWidth: 60 } } });
 
-            const q = query(
-                pagamentosRef,
-                where("data", ">=", Timestamp.fromDate(inicio)),
-                where("data", "<", Timestamp.fromDate(fim))
-            );
-
-            const snapshot = await getDocs(q);
-            const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setPagamentos(results);
-
-            // 👉 Cálculo total geral
-            const total = results.reduce((acc, pagamento) => acc + (Number(pagamento.valor) || 0), 0);
-            if (onTotalChange) {
-                onTotalChange(total);
-            }
-
-            // ✅ Cálculos por forma de pagamento
-            const totalPix = results
-                .filter(p => p.formaPagamento?.toLowerCase() === "pix")
-                .reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
-            const totalDinheiro = results
-                .filter(p => p.formaPagamento?.toLowerCase() === "dinheiro")
-                .reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
-
-            setTotalFiadoPix(totalPix);
-            setTotalFiadoDinheiro(totalDinheiro);
-        };
-
-        fetchPagamentos();
-    }, [filtro, dataEspecifica, empresaId, onTotalChange]);
-
-
+        const filename = `Relatorio_Vendas_Pagamentos_${dateFilter.type}_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(filename);
+    };
 
     if (loading) {
         return <LoadingSpinner />;
@@ -324,164 +446,182 @@ const Vendas = ({ onTotalChange }) => {
 
     return (
         <div id='vendas'>
-            <section id='salesSection'>
-                <h2>Vendas Feitas</h2>
-                <div id='clientFilter'>
-                    <label htmlFor="filterName">Filtrar por nome:</label>
-                    <input className='form-control'
+            <section id='filtersSection'>
+                <h2>Filtros</h2>
+                 <div id='clientFilter'>
+                    <label htmlFor="filterName">Filtrar por nome cliente (Vendas):</label>
+                    <input
+                        className='form-control'
                         type="text"
-                        id="filterSale"
+                        id="filterName"
                         value={filterName}
-                        onChange={(e) => handleFilter(e.target.value)}
+                        onChange={handleFilterNameChange}
                         placeholder="Digite o nome do cliente"
                     />
                 </div>
                 <div id='dateFilter'>
-                    <label htmlFor="timeFilter">Filtrar por perído:</label>
+                    <label htmlFor="dateFilterType">Filtrar por período:</label>
                     <select
-                        id="timeFilter"
+                        id="dateFilterType"
                         className="form-control"
-                        value={timeFilter}
-                        onChange={(e) => setTimeFilter(Number(e.target.value))}
+                        value={dateFilter.type}
+                        onChange={handleDateFilterChange}
                     >
-                        <option value={1}>Hoje</option>
-                        <option value={0}>Ontem</option>
-                        <option value={7}>Últimos 7 dias</option>
-                        <option value={15}>Últimos 15 dias</option>
-                        <option value={30}>Últimos 30 dias</option>
-                        <option value={60}>Últimos 02 meses</option>
-                        <option value={90}>Últimos 03 meses</option>
-                        <option value={180}>Últimos 06 meses</option>
-                        <option value={365}>Últimos 12 meses</option>
-                        <option value={9999}>Todos os tempos</option>
+                        <option value="today">Hoje</option>
+                        <option value="yesterday">Ontem</option>
+                        <option value="last7days">Últimos 7 dias</option>
+                        <option value="last15days">Últimos 15 dias</option>
+                        <option value="last30days">Últimos 30 dias</option>
+                        <option value="last60days">Últimos 60 dias</option>
+                        <option value="last90days">Últimos 90 dias</option>
+                        <option value="last180days">Últimos 180 dias</option>
+                        <option value="last365days">Últimos 365 dias</option>
+                        <option value="allTime">Todos os tempos</option>
+                        <option value="specific">Data específica</option>
                     </select>
                 </div>
-                <div id='specificDateFilter'>
-                    <label htmlFor="filterDate">Filtrar por data:</label>
-                    <input
-                        type="date"
-                        value={filterDate}
-                        onChange={(e) => setFilterDate(e.target.value)} className='form-control'
-                    />
+                {dateFilter.type === 'specific' && (
+                    <div id='specificDateFilter'>
+                        <label htmlFor="specificDateValue">Selecionar data:</label>
+                        <input
+                            type="date"
+                            id="specificDateValue"
+                            value={dateFilter.specificDate}
+                            onChange={handleSpecificDateChange}
+                            className='form-control'
+                        />
+                    </div>
+                )}
+                 <div id='exportReportButton' style={{ marginTop: '15px' }}>
+                    <button onClick={exportReportPDF} className='btn btn-primary'>
+                        Exportar Relatório PDF
+                    </button>
                 </div>
+            </section>
+
+            <section id='summaryAndKpisSection'>
+                 <h2>Resumo e KPIs: {currentPeriodDescription}</h2>
+                 <div id='kpisSection' style={{ marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px solid #eee' }}>
+                     <h3>Indicadores Chave (KPIs)</h3>
+                     <p><strong>Nº Vendas:</strong> {filteredSales.length}</p>
+                     <p><strong>Nº Pagamentos Fiado:</strong> {allPagamentos.length}</p>
+                     <p><strong>% Vendas Fiado:</strong> {fiadoPercentage.toFixed(1)}%</p>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '5px' }}>
+                         <label htmlFor="profitMarginInput"><strong>Lucro Estimado (@</strong></label>
+                         <input 
+                            type="number" 
+                            id="profitMarginInput"
+                            value={profitMargin}
+                            onChange={handleProfitMarginChange}
+                            min="0"
+                            max="100"
+                            step="1"
+                            style={{ width: '60px', padding: '2px 5px' }} 
+                            className='form-control'
+                         />
+                         <label htmlFor="profitMarginInput"><strong>%):</strong> R$ {estimatedProfit.toFixed(2).replace('.', ',')}</label>
+                     </div>
+                 </div>
+                 <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '20px' }}>
+                     <div id='salesNumbers'>
+                         <h4>Vendas</h4>
+                         <p><strong>Total Vendido:</strong> R$ {totalSalesValue.toFixed(2).replace('.', ',')}</p>
+                         <p><strong>Total Fiado Gerado:</strong> R$ {totalFiadoValue.toFixed(2).replace('.', ',')}</p>
+                         <p><strong>Recebido (Dinheiro):</strong> R$ {totalSalesDinheiro.toFixed(2).replace('.', ',')}</p>
+                         <p><strong>Recebido (Pix):</strong> R$ {totalSalesPix.toFixed(2).replace('.', ',')}</p>
+                         <p><strong>Recebido (Total Vendas):</strong> R$ {(totalSalesDinheiro + totalSalesPix).toFixed(2).replace('.', ',')}</p>
+                     </div>
+                     <div id='pagamentosNumbers'>
+                         <h4>Pagamentos de Fiado</h4>
+                         <p><strong>Total Recebido:</strong> R$ {totalPagamentosGeral.toFixed(2).replace('.', ',')}</p>
+                         <p><strong>Recebido (Dinheiro):</strong> R$ {totalPagamentosDinheiro.toFixed(2).replace('.', ',')}</p>
+                         <p><strong>Recebido (Pix):</strong> R$ {totalPagamentosPix.toFixed(2).replace('.', ',')}</p>
+                     </div>
+                 </div>
+                 <div id='totalCaixa' style={{ marginTop: '20px', paddingTop: '15px', borderTop: '2px solid #666', textAlign: 'center' }}>
+                    <h3 style={{ marginBottom: '10px' }}>Total em Caixa no Período</h3>
+                    <p style={{ fontSize: '1.4em', fontWeight: 'bold', color: '#27ae60' }}>
+                        R$ {totalEmCaixa.toFixed(2).replace('.', ',')}
+                    </p>
+                    <small>(Soma de: Vendas Dinheiro + Vendas Pix + Total Pagamentos Fiado)</small>
+                </div>
+            </section>
+
+            <section id='salesSection'>
+                <h2>Vendas Filtradas ({filteredSales.length})</h2>
+                {filteredSales.length === 0 && !loading && (
+                    <p>Nenhuma venda encontrada para os filtros selecionados.</p>
+                )}
                 <ul>
-                    {filteredSales.map((sale) => (
+                    {currentSales.map((sale) => (
                         <li className='individualSale' key={sale.id} onClick={() => openSaleDetails(sale)}>
-                            <span><strong>{sale.Cliente.nome}</strong>{' '}</span>
-                            <span><strong>Valor: </strong>R${sale.TotalVenda.toFixed(2)}</span>
-                            <span><strong>Data: </strong>{new Date(sale.Data.seconds * 1000).toLocaleString()} </span>
-                            <span><strong><i>FP</i></strong>: {sale.FormaPagamento} </span>
-                            <span><strong><i>ID</i></strong>: {sale.id} </span>
+                            <span><strong>{sale.Cliente?.nome || 'Cliente não informado'}</strong></span>
+                            <span><strong>Valor: </strong>R${(sale.TotalVenda || 0).toFixed(2)}</span>
+                            <span><strong>Data: </strong>{sale.Data?.seconds ? new Date(sale.Data.seconds * 1000).toLocaleString('pt-BR') : 'Data inválida'}</span>
+                            <span><strong>FP: </strong>{sale.FormaPagamento || 'N/A'}</span>
                         </li>
                     ))}
                 </ul>
+                <Pagination 
+                    currentPage={salesCurrentPage} 
+                    totalPages={salesTotalPages} 
+                    onPageChange={setSalesCurrentPage} 
+                />
             </section>
 
-            <div id='salesNumbers'>
-                <p><strong>Pago:</strong> R${(Number(salesValue) - Number(fiadoValue)).toFixed(2).replace('.', ',')}</p>
-                <p><strong>Fiado:</strong> R$ {fiadoValue.toFixed(2).replace('.', ',')}</p>
-                <p><strong>Dinheiro:</strong> R${dinheiroTotal.toFixed(2)}</p>
-                <p><strong>Pix:</strong> R$ {pixTotal.toFixed(2).replace('.', ',')}</p>
-                <p><strong>Total de Vendas:</strong> R$ {Number(salesValue).toFixed(2).replace('.', ',')}</p>
+            <section id='pagamentosSection'>
+                <h2>Pagamentos de Fiado Recebidos ({allPagamentos.length})</h2>
+                 {allPagamentos.length === 0 && !loading && (
+                    <p>Nenhum pagamento encontrado para o período selecionado.</p>
+                )}
+                <ul>
+                    {currentPagamentos.map((pagamento) => (
+                        <li className='individualPagamento' key={pagamento.id}>
+                            <span><strong>Cliente: </strong>{pagamento.clienteNome || 'Não informado'}</span>
+                            <span><strong>Valor: </strong>R${(Number(pagamento.valor) || 0).toFixed(2)}</span>
+                            <span><strong>Data: </strong>{pagamento.data?.seconds ? new Date(pagamento.data.seconds * 1000).toLocaleString('pt-BR') : 'Data inválida'}</span>
+                            <span><strong>FP: </strong>{pagamento.formaPagamento || 'N/A'}</span>
+                        </li>
+                    ))}
+                </ul>
+                 <Pagination 
+                    currentPage={pagamentosCurrentPage} 
+                    totalPages={pagamentosTotalPages} 
+                    onPageChange={setPagamentosCurrentPage} 
+                />
+            </section>
 
-
-            </div>
-
-            {/* Modal com detalhes da venda */}
             {showModal && selectedSale && (
-                <div id='modal' onClick={closeModal}>
-                    <div id="modalContent">
-                        <button id='closeModal' className="material-symbols-outlined" onClick={closeModal}>
-                            close
-                        </button>
+                 <div id='modal' onClick={closeModal}>
+                     <div id="modalContent" onClick={(e) => e.stopPropagation()}> 
+                        <button id='closeModal' className="material-symbols-outlined" onClick={closeModal}>close</button>
                         <h2>Detalhes da Venda:</h2>
-                        <p><strong>Operador:</strong>{selectedSale.Operador}</p>
-                        <p><strong>Cliente:</strong> {selectedSale.Cliente.nome}</p>
-                        <p><strong>Telefone:</strong> {selectedSale.Cliente.telefone}</p>
-                        <p><strong>Data:</strong> {new Date(selectedSale.Data.seconds * 1000).toLocaleString()}</p>
-                        <p><strong>Total:</strong> R${selectedSale.TotalVenda.toFixed(2)}</p>
-                        <p><strong>Pago em Dinheiro:</strong> R${selectedSale.PagoDinheiro || ''}</p>
-                        <p><strong>Pago em Pix:</strong> R${selectedSale.PagoPix || ''}</p>
-                        <p><strong>Fiado:</strong> R${(selectedSale.Fiado.toFixed(2)) || ''}</p>
-                        <p>
-                            <strong>Forma de Pagamento:</strong> {
-                                selectedSale.FormaPagamento
-                            }
-                        </p>
-                        <h3>Itens da Venda:</h3>
+                        <p><strong>Operador:</strong> {selectedSale.Operador || 'N/A'}</p>
+                        <p><strong>Cliente:</strong> {selectedSale.Cliente?.nome || 'N/A'}</p>
+                        <p><strong>Telefone:</strong> {selectedSale.Cliente?.telefone || 'N/A'}</p>
+                        <p><strong>Data:</strong> {selectedSale.Data?.seconds ? new Date(selectedSale.Data.seconds * 1000).toLocaleString('pt-BR') : 'N/A'}</p>
+                        <p><strong>Total:</strong> R$ {(selectedSale.TotalVenda || 0).toFixed(2)}</p>
+                        <p><strong>Pago em Dinheiro:</strong> R$ {(selectedSale.PagoDinheiro || 0).toFixed(2)}</p>
+                        <p><strong>Pago em Pix:</strong> R$ {(selectedSale.PagoPix || 0).toFixed(2)}</p>
+                        <p><strong>Fiado:</strong> R$ {(selectedSale.Fiado || 0).toFixed(2)}</p>
+                        <p><strong>Forma Pagamento Predominante:</strong> {selectedSale.FormaPagamento || 'N/A'}</p>
+                        <h3>Itens:</h3>
                         <ul>
-                            {selectedSale.Lista.map((item, index) => (
-                                <li key={index}>{item.quantity} x {item.nome} - R${item.preco.toFixed(2)}</li>
+                            {(selectedSale.Lista || []).map((item, index) => (
+                                <li key={index}>{item.quantity}x {item.nome} - R$ {(item.preco || 0).toFixed(2)}</li>
                             ))}
                         </ul>
-                        <div id='modalButtons'>
-                            <button onClick={exportPDF} className="btn btn-primary">Exportar PDF</button>
-                            <button className='btn btn-danger' onClick={handleDeleteSale}>
-                                Deletar Venda
-                            </button>
+                        <div className='modalActions'>
+                            {/* Botão chama a função implementada agora */}
+                            <button onClick={exportSalePDF} className='btn btn-secondary'>Exportar PDF Venda</button> 
+                            <button onClick={handleDeleteSale} className='btn btn-danger'>Excluir Venda</button>
                         </div>
                     </div>
                 </div>
             )}
-            <div id='chart'>
-                <GraficoPizza
-                    vendasPagas={salesValue - fiadoValue}
-                    vendasFiado={fiadoValue}
-                    vendasTotais={salesValue}
-                />
-            </div>
-
-
-            <div id='fiadoPaymentsSection'>
-                <h2>Pagamentos de Fiado</h2>
-
-                <select value={filtro} onChange={(e) => setFiltro(e.target.value)} className='form-control'>
-                    <option value="hoje">Hoje</option>
-                    <option value="ontem">Ontem</option>
-                    <option value="7dias">Últimos 7 dias</option>
-                    <option value="30dias">Últimos 30 dias</option>
-                    <option value="data">Por data específica</option>
-                </select>
-
-                {filtro === "data" && (
-                    <input
-                        type="date"
-                        value={dataEspecifica}
-                        onChange={(e) => setDataEspecifica(e.target.value)} className='form-control'
-                    />
-                )}
-
-                <ul id='fiadoList'>
-                    {pagamentos.map((p) => (
-                        <li key={p.id} id='fiadoItem'>
-                            <span className='fiadoDetails'><strong>{p.cliente}</strong></span> 
-                            <span className='fiadoDetails'><strong>Valor:</strong> R$ {p.valor.toFixed(2)}</span>
-                            <span className='fiadoDetails'><strong>Data:</strong>{p.data.toDate().toLocaleString("pt-BR")}</span>
-                            <span className='fiadoDetails'><strong>FP:</strong>{p.formaPagamento}</span> {" "}
-                            <span className='fiadoDetails'><strong>ID:</strong>{p.id}</span>
-                        </li>
-                    ))}
-                    {pagamentos.length === 0 && <p>Nenhum pagamento encontrado.</p>}
-                </ul>
-                <div id='paymentDashboard'>
-                    <h3>Pagamentos</h3>
-                    <p><strong>Dinheiro:</strong> R$ {totalFiadoDinheiro.toFixed(2)}</p>
-                    <p><strong>Pix:</strong> R$ {totalFiadoPix.toFixed(2)}</p>
-                    <p><strong>Total: </strong>R${pagamentos.reduce((acc, pagamento) => acc + (Number(pagamento.valor) || 0), 0).toFixed(2)}</p>
-                </div>
-
-                <div>
-                    <p id='caixaDia' title="Total Pago">
-                        <strong>Caixa Pago:</strong> R$ {(
-                            (Number(salesValue) - Number(fiadoValue)) +
-                            pagamentos.reduce((acc, pagamento) => acc + (Number(pagamento.valor) || 0), 0)
-                        ).toFixed(2).replace('.', ',')}
-                    </p>
-
-                </div>
-            </div>
         </div>
     );
 };
 
 export default Vendas;
+

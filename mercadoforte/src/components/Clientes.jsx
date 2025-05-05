@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, getDocs, updateDoc, doc, setDoc, onSnapshot, deleteDoc, Timestamp, addDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import LoadingSpinner from './LoadingSpinner';
-import '../styles/Clientes.css';
-import { use } from 'react';
+import '../styles/Clientes.css'; // Certifique-se que o caminho está correto
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -12,311 +11,289 @@ const Clientes = () => {
     const [filteredClients, setFilteredClients] = useState([]);
     const [filterName, setFilterName] = useState('');
     const [selectedClient, setSelectedClient] = useState(null);
-    const [payment, setPayment] = useState(); // Novo valor de pagamento
+    const [payment, setPayment] = useState(''); // Usar string vazia para inputs controlados
     const [loading, setLoading] = useState(false);
-    const [addClient, setAddClient] = useState(false);
+    const [showAddClientModal, setShowAddClientModal] = useState(false);
     const [newClient, setNewClient] = useState({
         nome: '',
         telefone: '',
         divida: 0,
     });
-    const [editClientModal, setEditClientModal] = useState(false);
-    const [paymentModal, setPaymentModal] = useState(true);
-    const [totalPayment, setTotalPayment] = useState(0);
-    const [partialPayment, setPartialPayment] = useState(0);
+    const [showEditClientModal, setShowEditClientModal] = useState(false);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
     const empresaId = localStorage.getItem('empresaId');
     const [paymentMethod, setPaymentMethod] = useState("");
 
-
-
+    // Função para abrir modal de edição
     const openEditingModal = (client) => {
-        setSelectedClient(client)
-        setEditClientModal(true);
+        // Garante que divida seja um número ao abrir o modal
+        setSelectedClient({ ...client, divida: parseFloat(client.divida) || 0 });
+        setShowEditClientModal(true);
     }
 
-    // Função para buscar todos os clientes e agrupar as vendas
-    const fetchClients = async () => {
+    // Função para abrir modal de pagamento
+    const openPaymentModal = (client) => {
+        setSelectedClient(client);
+        setPayment(''); // Limpa valor do pagamento anterior
+        setPaymentMethod(''); // Limpa método de pagamento anterior
+        setShowPaymentModal(true);
+    }
+
+    // Função para buscar clientes (pode ser removida se o listener for suficiente)
+    /*
+    const fetchClients = async () => { ... };
+    */
+
+    // Função de filtro por nome
+    const handleFilter = (name) => {
+        setFilterName(name);
+        // O filtro é aplicado automaticamente pelo useEffect
+    };
+
+    // Listener em tempo real
+    useEffect(() => {
+        if (!empresaId) return;
         setLoading(true);
-        try {
-            const clientsRef = collection(db, `Empresas/${empresaId}/Clientes`);
-            const salesRef = collection(db, 'Vendas');
+        const clientsRef = collection(db, `Empresas/${empresaId}/Clientes`);
+        const q = query(clientsRef); // Pode adicionar orderBy aqui se quiser
 
-            const [clientsSnapshot, salesSnapshot] = await Promise.all([
-                getDocs(clientsRef),
-                getDocs(salesRef),
-            ]);
-
-            const salesByName = {};
-            salesSnapshot.forEach((doc) => {
-                const saleData = doc.data();
-                const clientName = saleData.Cliente.nome;
-
-                if (salesByName[clientName]) {
-                    salesByName[clientName].push(saleData);
-                } else {
-                    salesByName[clientName] = [saleData];
-                }
-            });
-
+        const unsubscribe = onSnapshot(q, (snapshot) => {
             let clientsData = [];
-            clientsSnapshot.forEach((doc) => {
+            snapshot.forEach((doc) => {
                 const clientData = doc.data();
-                const clientName = clientData.nome;
-                const clientPhone = clientData.telefone;
-                const clientSales = clientData.totalGasto || 0;
-                const clientDivida = clientData.divida || 0;
-                const sales = salesByName[clientName] || [];
-
                 clientsData.push({
-                    telefone: clientPhone,
-                    nome: clientName,
-                    comprasFeitas: sales.length, // Número de vendas por cliente
-                    totalGasto: clientSales, // Total gasto pelo cliente
-                    divida: clientDivida, // Dívida atual
+                    id: doc.id,
+                    telefone: clientData.telefone || '',
+                    nome: clientData.nome || 'Nome não encontrado',
+                    comprasFeitas: clientData.comprasFeitas || 0,
+                    totalGasto: clientData.totalGasto || 0,
+                    divida: clientData.divida || 0,
                 });
             });
-
-            // Ordenar clientes por ordem alfabética (baseado no nome)
             clientsData = clientsData.sort((a, b) => a.nome.localeCompare(b.nome));
-
             setClients(clientsData);
-            setFilteredClients(clientsData);
+            // Reaplicar filtro após atualização
+            const currentFilter = filterName.trim().toLowerCase();
+            if (currentFilter === '') {
+                setFilteredClients(clientsData);
+            } else {
+                const filtered = clientsData.filter((client) =>
+                    client.nome.toLowerCase().includes(currentFilter)
+                );
+                setFilteredClients(filtered);
+            }
+            setLoading(false);
+        }, (error) => {
+            console.error("Erro no listener do Firestore: ", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe(); // Limpa o listener
+    }, [empresaId, filterName]); // Re-executa se empresaId ou filterName mudar
+
+    // Função para criar cliente
+    const createClient = async (e) => {
+        e.preventDefault();
+        const { nome, telefone } = newClient;
+        if (!nome || !telefone) {
+            alert('Preencha nome e telefone!');
+            return;
+        }
+        setLoading(true);
+        try {
+            const clientNameTrimmed = nome.trim();
+            const clientsRef = collection(db, `Empresas/${empresaId}/Clientes`);
+            await addDoc(clientsRef, {
+                nome: clientNameTrimmed,
+                telefone: telefone.trim(),
+                criadoEm: Timestamp.now(),
+                divida: parseFloat(newClient.divida) || 0,
+                dataUltimoPagamento: '',
+                nomeMinusculo: clientNameTrimmed.toLowerCase(),
+                totalGasto: 0,
+                comprasFeitas: 0
+            });
+            alert('Cliente criado com sucesso!');
+            setNewClient({ nome: '', telefone: '', divida: 0 });
+            setShowAddClientModal(false);
         } catch (error) {
-            console.error('Erro ao buscar clientes e vendas:', error);
+            console.error('Erro ao criar cliente:', error);
+            alert('Erro ao criar cliente.');
         } finally {
             setLoading(false);
         }
     };
 
-
-    // Função de filtro por nome
-    const handleFilter = (name) => {
-        setFilterName(name);
-        if (name.trim() === '') {
-            setFilteredClients(clients);
-        } else {
-            const filtered = clients.filter((client) =>
-                client.nome.toLowerCase().includes(name.toLowerCase())
-            );
-            setFilteredClients(filtered);
-        }
-    };
-
-    // Adicionando o `onSnapshot` para ouvir em tempo real as mudanças no Firebase
-    useEffect(() => {
-        fetchClients(); // Chama a função para buscar os dados ao montar o componente
-
-        const unsub = onSnapshot(collection(db, `Empresas/${empresaId}/Clientes`), (snapshot) => {
-            const updatedClients = [];
-            snapshot.forEach((doc) => {
-                const clientData = doc.data();
-                updatedClients.push({
-                    telefone: clientData.telefone,
-                    nome: clientData.nome,
-                    divida: clientData.divida || 0,
-                });
-            });
-
-            setClients(updatedClients);
-            setFilteredClients(updatedClients);
-        });
-
-        // Limpeza do listener quando o componente for desmontado
-        return () => unsub();
-    }, []);
-
-    const createClient = async (e) => {
+    // Função para salvar dados editados do cliente (INCLUINDO DÍVIDA)
+    const saveEditedClientData = async (e) => {
         e.preventDefault();
-        const { nome, telefone } = newClient;
-
-        if (!nome || !telefone) {
-            alert('Preencha todos os campos obrigatórios!');
+        if (!selectedClient || !selectedClient.id) {
+            alert("Erro: Cliente não selecionado ou ID inválido.");
             return;
         }
 
-        try {
-            const clientName = nome.trim();
-            const clientRef = doc(db, `Empresas/${empresaId}/Clientes`, clientName);
-
-            const clientData = {
-                nome,
-                telefone,
-                criadoEm: new Date(),
-                divida: parseFloat(newClient.divida) || 0,
-                dataUltimoPagamento: '', nomeMinusculo: nome.toLowerCase(),
-            };
-
-            await setDoc(clientRef, clientData);
-            alert('Cliente criado com sucesso!');
-            setNewClient({ nome: '', telefone: '', divida: 0 });
-            closeForm();
-        } catch (error) {
-            console.error('Erro ao criar cliente:', error);
-            alert('Erro ao criar cliente. Tente novamente.');
+        const dividaValue = parseFloat(selectedClient.divida);
+        if (isNaN(dividaValue) || dividaValue < 0) {
+             alert("Erro: O valor da dívida deve ser um número positivo ou zero.");
+             return;
         }
-    };
 
-    const saveClientData = async (client) => {
-        if (!client || !client.nome || !client.telefone) {
-            console.error("Dados do cliente incompletos. Verifique antes de salvar.");
-            alert("Erro: Dados do cliente estão incompletos.");
+        // Confirmação extra para alteração de dívida
+        const confirmation = window.confirm(`Confirma a alteração dos dados de ${selectedClient.nome}, incluindo a dívida para R$ ${dividaValue.toFixed(2)}?`);
+        if (!confirmation) {
             return;
         }
 
+        setLoading(true);
         try {
-            const clientRef = doc(db, `Empresas/${empresaId}/Clientes`, client.nome); // Usando o como ID
-            const updatedData = {
-                nome: client.nome,
-                telefone: client.telefone,
-                divida: client.divida,
-                nomeMinusculo: client.nome.toLowerCase(),
-            };
-
-            await updateDoc(clientRef, updatedData);
-            console.log("Cliente atualizado com sucesso!");
-            alert("Dados do cliente atualizados com sucesso!");
+            const clientRef = doc(db, `Empresas/${empresaId}/Clientes`, selectedClient.id);
+            await updateDoc(clientRef, {
+                nome: selectedClient.nome.trim(),
+                telefone: selectedClient.telefone.trim(),
+                divida: dividaValue, // Salva a dívida editada
+                nomeMinusculo: selectedClient.nome.trim().toLowerCase(),
+            });
+            alert('Dados do cliente atualizados com sucesso!');
+            setShowEditClientModal(false);
+            setSelectedClient(null);
         } catch (error) {
-            console.error("Erro ao atualizar cliente no Firebase:", error);
-            alert("Erro ao salvar os dados. Por favor, tente novamente.");
+            console.error("Erro ao atualizar cliente:", error);
+            alert("Erro ao salvar. Tente novamente.");
+        } finally {
+            setLoading(false);
         }
     };
 
-
-    const handleDeleteClient = async (client) => {
-        const confirmation = window.confirm(`Tem certeza que deseja excluir o cliente ${client.nome}?`);
+    // Função para deletar cliente
+    const handleDeleteClient = async (clientId, clientName) => {
+        const confirmation = window.confirm(`Tem certeza que deseja excluir ${clientName}? Esta ação não pode ser desfeita.`);
         if (confirmation) {
+            setLoading(true);
             try {
-                const clientRef = doc(db, `Empresas/${empresaId}/Clientes`, client.nome);
-                await deleteDoc(clientRef); // Exclui o cliente
+                const clientRef = doc(db, `Empresas/${empresaId}/Clientes`, clientId);
+                await deleteDoc(clientRef);
                 alert('Cliente excluído com sucesso!');
             } catch (error) {
                 console.error('Erro ao excluir cliente:', error);
-                alert('Erro ao excluir cliente. Tente novamente.');
+                alert('Erro ao excluir.');
+            } finally {
+                setLoading(false);
             }
         }
     };
 
-
-    const handleAddClient = () => {
-        setAddClient(true);
-    };
-
-    const closeForm = () => {
-        setAddClient(false);
-    };
-
-    const calculateTotalDebt = () => {
-        return clients.reduce((total, client) => total + (client.divida || 0), 0).toFixed(2);
-    };
-
-    /*const updateClientsWithTotalGasto = async () => {
-        const clientsRef = collection(db, `Empresas/${empresaId}/Clientes`);
-        const clientsSnapshot = await getDocs(clientsRef);
-    
-        clientsSnapshot.forEach(async (clientDoc) => {
-            const clientData = clientDoc.data();
-            if (clientData.totalGasto === undefined) {
-                const clientRef = doc(db, `Empresas/${empresaId}/Clientes`, clientDoc.id);
-                await updateDoc(clientRef, { totalGasto: 0 });
-            }
-        });
-    
-        console.log('Atualização concluída!');
-    };
-
-    useEffect(() => {
-        updateClientsWithTotalGasto();
-    }, []);*/
-
-
-
-    const handlePayment = async () => {
-        setPaymentModal(true);
-        if (!selectedClient || payment <= 0 || !paymentMethod) {
-            alert("Insira um valor válido e selecione a forma de pagamento.");
+    // Função para processar pagamento
+    const handlePayment = async (e) => {
+        e.preventDefault();
+        const paymentValue = parseFloat(payment);
+        if (!selectedClient || !selectedClient.id || !paymentValue || paymentValue <= 0 || !paymentMethod) {
+            alert("Selecione o cliente, insira um valor válido e escolha a forma de pagamento.");
+            return;
+        }
+        if (paymentValue > selectedClient.divida) {
+            alert("O valor do pagamento não pode ser maior que a dívida atual.");
             return;
         }
 
-        const clientRef = doc(db, `Empresas/${empresaId}/Clientes`, selectedClient.nome);
-        const newDebt = Math.max(selectedClient.divida - payment, 0);
+        setLoading(true);
+        const clientRef = doc(db, `Empresas/${empresaId}/Clientes`, selectedClient.id);
+        const newDebt = Math.max(0, selectedClient.divida - paymentValue);
 
         try {
-            // Atualiza a dívida do cliente
-            await updateDoc(clientRef, { divida: newDebt });
-
-            // Adiciona registro do pagamento à coleção Pagamentos
-            const pagamentosRef = collection(db, `Empresas/${empresaId}/Pagamentos`);
-            await addDoc(pagamentosRef, {
-                cliente: selectedClient.nome,
-                valor: payment,
-                data: Timestamp.now(),
-                tipo: "Fiado",
-                formaPagamento: paymentMethod // dinheiro ou pix
+            await updateDoc(clientRef, {
+                 divida: newDebt,
+                 dataUltimoPagamento: Timestamp.now()
             });
 
-            alert(`Pagamento de R$ ${payment.toFixed(2)} realizado com sucesso! Nova dívida: R$ ${newDebt.toFixed(2)}`);
-            setPayment(0);
-            setPaymentMethod(""); // Resetar forma de pagamento se desejar
-            setPaymentModal(false);
-            fetchClients(); // Atualiza os dados
+            const pagamentosRef = collection(db, `Empresas/${empresaId}/Pagamentos`);
+            await addDoc(pagamentosRef, {
+                clienteId: selectedClient.id,
+                clienteNome: selectedClient.nome,
+                valor: paymentValue,
+                data: Timestamp.now(),
+                tipo: "Fiado",
+                formaPagamento: paymentMethod
+            });
+
+            alert(`Pagamento de R$ ${paymentValue.toFixed(2)} realizado! Nova dívida: R$ ${newDebt.toFixed(2)}`);
+            setShowPaymentModal(false);
+            setSelectedClient(null);
+            setPayment('');
+            setPaymentMethod('');
         } catch (error) {
             console.error("Erro ao processar pagamento:", error);
-            alert("Erro ao processar pagamento. Tente novamente.");
+            alert("Erro ao processar pagamento.");
+        } finally {
+            setLoading(false);
         }
     };
 
+    // Função para calcular dívida total
+    const calculateTotalDebt = () => {
+        // Usar filteredClients para refletir o filtro atual no total
+        return filteredClients.reduce((total, client) => total + (client.divida || 0), 0).toFixed(2);
+    };
+
+    // Função para gerar PDF
     const gerarPDF = () => {
         const doc = new jsPDF();
-    
         doc.setFontSize(16);
-        doc.text('Lista de Clientes', 14, 15);
-    
-        const tableColumn = ["Nome", "Telefone", "Compras Feitas", "Dívida Atual (R$)", "Total Gasto (R$)"];
+        doc.text(`Lista de Clientes - ${filterName ? 'Filtro: ' + filterName : 'Todos'}`, 14, 15);
+
+        const tableColumn = ["Nome", "Telefone", "Dívida Atual (R$)", "Total Gasto (R$)"];
         const tableRows = [];
-    
         let totalFiado = 0;
-    
-        clients.forEach(client => {
+
+        filteredClients.forEach(client => {
             const divida = client.divida || 0;
             const row = [
                 client.nome,
-                client.telefone,
-                client.comprasFeitas || 0,
+                client.telefone || 'N/A',
                 divida.toFixed(2),
-                client.totalGasto?.toFixed(2) || "0.00"
+                (client.totalGasto || 0).toFixed(2)
             ];
             tableRows.push(row);
             totalFiado += divida;
         });
-    
+
         autoTable(doc, {
             head: [tableColumn],
             body: tableRows,
             startY: 25,
+            theme: 'grid',
+            headStyles: { fillColor: [52, 73, 94] },
+            styles: { fontSize: 9 }
         });
-    
+
         const finalY = doc.lastAutoTable.finalY + 10;
-    
         const dataAtual = new Date();
         const dataFormatada = dataAtual.toLocaleDateString();
         const horaFormatada = dataAtual.toLocaleTimeString();
-    
+
         doc.setFontSize(12);
-        doc.text(`Total de fiado: R$ ${totalFiado.toFixed(2)}`, 14, finalY);
-        doc.text(`Total de clientes: ${clients.length}`, 14, finalY + 7);
+        doc.text(`Total de fiado (filtrado): R$ ${totalFiado.toFixed(2)}`, 14, finalY);
+        doc.text(`Total de clientes (filtrado): ${filteredClients.length}`, 14, finalY + 7);
         doc.text(`Gerado em: ${dataFormatada} às ${horaFormatada}`, 14, finalY + 14);
-    
-        doc.save("lista_clientes.pdf");
+
+        doc.save(`lista_clientes_${filterName ? filterName + '_' : ''}${dataFormatada}.pdf`);
     };
 
+    // Input change handler para edição (incluindo dívida)
+    const handleEditInputChange = (e) => {
+        const { name, value } = e.target;
+        // Para dívida, converter para número ao mudar, mas manter como string no estado se necessário
+        // Ou converter apenas ao salvar
+        setSelectedClient(prev => ({ ...prev, [name]: value }));
+    };
 
-    if (loading) {
+    if (loading && clients.length === 0) {
         return <LoadingSpinner />;
     }
 
     return (
         <div id="clientes">
-            <div>
+            {/* --- Filtro --- */}
+            <div id="filterContainer">
                 <label htmlFor="filterName">Filtrar por Nome:</label>
                 <input
                     type="text"
@@ -326,237 +303,253 @@ const Clientes = () => {
                     placeholder="Digite o nome do cliente"
                     className="form-control"
                 />
+                 <button onClick={gerarPDF} className="btn btn-secondary btn-sm" title="Gerar PDF da Lista Filtrada">
+                    <span className="material-symbols-outlined">picture_as_pdf</span> PDF
+                </button>
             </div>
 
-            <table id="clientsList">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Telefone</th>
-                        <th>Compras Feitas</th>
-                        <th>Dívida Atual</th>
-                        <th>Gastos</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredClients.map((client, index) => (
-                        <tr key={index}>
-                            <td className='openClientModal'
-                                onClick={() => {
-                                    // Define o cliente selecionado
-                                    openEditingModal(client); // Abre o modal de edição
-                                }}
-                            >
-                                {client.nome}
-                            </td>
-                            <td>{client.telefone}</td>
-                            <td>{client.comprasFeitas}</td>
-                            <td style={{ color: client.divida > 0 ? 'red' : 'black' }}>
-                                {client.divida.toFixed(2)}
-                            </td>
-                            <td>{client.totalGasto}</td>
-                            <td className="actions">
-                                {client.divida > 0 && (
-                                    <button id="payBill"
-                                        className="btn btn-success"
-                                        onClick={() => {
-                                            setSelectedClient(client);
-                                            setPaymentModal(true);
-                                        }} title='Pagar Dívida'
-                                    >
-                                        Pagar Dívida <span className='material-symbols-outlined'>attach_money</span>
-                                    </button>
-                                )}
-                                {client.divida === 0 && (
-                                    <button id="deleteClient" className='material-symbols-outlined'
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDeleteClient(client); // Deleta o cliente
-                                        }} title='Deletar Cliente'
-                                    >
-                                        delete
-                                    </button>
-                                )
-                                }
-
-                            </td>
+            {/* --- Container da Lista (Cards e Tabela) --- */}
+            <div id="clientsListContainer">
+                {/* Tabela para telas maiores (controlada via CSS) */}
+                <table id="clientsList">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Telefone</th>
+                            <th>Dívida Atual</th>
+                            <th>Total Gasto</th>
+                            <th>Ações</th>
                         </tr>
-                    ))}
-                </tbody>
-                <tfoot>
+                    </thead>
+                    <tbody>
+                        {filteredClients.length === 0 && (
+                            <tr><td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>Nenhum cliente encontrado{filterName ? ' para este filtro' : ''}.</td></tr>
+                        )}
+                        {filteredClients.map((client) => (
+                            <tr key={client.id + '-row'} className="client-table-row">
+                                <td onClick={() => openEditingModal(client)} style={{ cursor: 'pointer', color: 'var(--primary-color)', textDecoration: 'underline' }}>
+                                    {client.nome}
+                                </td>
+                                <td>{client.telefone || 'N/A'}</td>
+                                <td style={{ color: client.divida > 0 ? 'var(--danger-color)' : 'inherit', fontWeight: client.divida > 0 ? 'bold' : 'normal' }}>
+                                    R$ {client.divida.toFixed(2)}
+                                </td>
+                                <td>R$ {(client.totalGasto || 0).toFixed(2)}</td>
+                                <td className="actions">
+                                    {client.divida > 0 && (
+                                        <button
+                                            className="btn btn-info btn-sm"
+                                            onClick={() => openPaymentModal(client)}
+                                            title='Pagar Dívida'
+                                        >
+                                            <span className='material-symbols-outlined'>attach_money</span> Pagar
+                                        </button>
+                                    )}
+                                    <button
+                                        className="btn btn-warning btn-sm"
+                                        onClick={() => openEditingModal(client)}
+                                        title='Editar Cliente'
+                                    >
+                                        <span className='material-symbols-outlined'>edit</span> Editar
+                                    </button>
+                                    {client.divida === 0 && (
+                                        <button
+                                            className="btn-icon delete-icon" // Classe específica para deletar
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteClient(client.id, client.nome);
+                                            }}
+                                            title='Deletar Cliente'
+                                        >
+                                            <span className='material-symbols-outlined'>delete</span>
+                                        </button>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                     <tfoot>
+                        <tr>
+                            <td colSpan="2"><strong>Total de Clientes (Filtrado):</strong></td>
+                            <td><strong>{filteredClients.length}</strong></td>
+                            <td><strong>Dívida Total (Filtrado):</strong></td>
+                            <td colSpan="1"><strong>R$ {calculateTotalDebt()}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
 
-                    <tr>
-                        <td colSpan="4">Dívida total dos clientes</td>
-                        <td><strong>{calculateTotalDebt()}</strong></td>
-                    </tr>
-                </tfoot>
-            </table>
-            {/*paymentModal && selectedClient && (
-                <div className="modal">
-                    <h3>Pagar dívida de {selectedClient.nome}</h3>
-                    <p>Dívida atual: R$ {selectedClient.divida.toFixed(2)}</p>
-                    <input
-                        type="number"
-                        value={payment}
-                        onChange={(e) => setPayment(parseFloat(e.target.value) || 0)}
-                        placeholder="Digite o valor do pagamento"
-                    />
-                    <button onClick={handlePayment}>Confirmar Pagamento</button>
-                    <button onClick={() => setPaymentModal(false)}>Cancelar</button>
-                </div>
-            )*/}
-            {paymentModal && selectedClient && (
-                <div id="paymentModal">
-                    <div id="paymentBody">
-                        <h3>Pagar dívida de {selectedClient.nome}</h3>
-                        <p>Dívida atual: R$ {selectedClient.divida.toFixed(2)}</p>
-
-                        <input
-                            type="text"
-                            value={payment}
-                            onChange={(e) => {
-                                let value = e.target.value.replace(',', '.');
-                                if (value === '' || !isNaN(value)) {
-                                    setPayment(value);
-                                }
-                            }}
-                            onBlur={() => {
-                                setPayment(parseFloat(payment.replace(',', '.')) || 0);
-                            }}
-                            placeholder="Digite o valor do pagamento"
-                        />
-
-                        <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
-                            <option value="">Selecione a forma de pagamento</option>
-                            <option value="dinheiro">Dinheiro</option>
-                            <option value="pix">Pix</option>
-                        </select>
-
-                        <button onClick={handlePayment}>Confirmar Pagamento</button>
-                        <button onClick={() => setPaymentModal(false)}>Cancelar</button>
-                    </div>
-                </div>
-            )}
-
-
-
-            {editClientModal && selectedClient && (
-                <div id="editClientModal">
-                    <div>
-                        <h2>Editar Cliente</h2>
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault(); // Previne o envio padrão do formulário
-                                // Atualiza os dados do cliente na base de dados
-                                saveClientData(selectedClient);
-                                setEditClientModal(false); // Fecha o modal
-                            }}
-                        >
-                            <label>Nome</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={selectedClient.nome}
-                                onChange={(e) =>
-                                    setSelectedClient({ ...selectedClient, nome: e.target.value })
-                                }
-                            />
-                            <label>Telefone</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={selectedClient.telefone}
-                                onChange={(e) =>
-                                    setSelectedClient({ ...selectedClient, telefone: e.target.value })
-                                }
-                            />
-                            <label>Dívida:</label>
-                            <div>
-                                <label>Fiado (Dívida Atual: R$ {(Number(selectedClient.divida) || 0).toFixed(2)}
-                                    )</label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    value={selectedClient.divida}
-                                    onChange={(e) => {
-                                        let value = e.target.value.replace(',', '.'); // Permitir uso de vírgula como ponto decimal
-
-                                        // Permitir que o campo fique vazio sem erro
-                                        if (value === '' || !isNaN(value)) {
-                                            setSelectedClient({ ...selectedClient, divida: value });
-                                        }
-                                    }}
-                                    onBlur={() => {
-                                        // Converte para número apenas quando o usuário sai do campo
-                                        setSelectedClient({ ...selectedClient, divida: parseFloat(selectedClient.divida) || 0 });
-                                    }}
-                                />
-
-                            </div>
-                            
-                            <strong>
-                                <div>
-                                    <p>Este cliente já gastou: <br />R$ {(selectedClient.totalGasto || 0).toFixed(2)}</p>
-                                </div>
-                            </strong>
-
-                            <div className="mt-3">
-                                <button type="submit" className="btn btn-dark form-control">
-                                    Salvar Alterações
-                                </button>
+                {/* Cards para Mobile (controlado via CSS) */}
+                 {filteredClients.length === 0 && !loading && (
+                     <p style={{ textAlign: 'center', padding: '20px', backgroundColor: '#fff', borderRadius: 'var(--border-radius)' }}>Nenhum cliente encontrado{filterName ? ' para este filtro' : ''}.</p>
+                 )}
+                {filteredClients.map((client) => (
+                    <div key={client.id + '-card'} className="client-card">
+                        <div className="client-info" onClick={() => openEditingModal(client)} style={{ cursor: 'pointer' }}>
+                            <span><strong>Nome:</strong> {client.nome}</span>
+                            <span><strong>Telefone:</strong> {client.telefone || 'N/A'}</span>
+                            <span><strong>Total Gasto:</strong> R$ {(client.totalGasto || 0).toFixed(2)}</span>
+                        </div>
+                        <div className={`client-debt ${client.divida > 0 ? '' : 'zero'}`}>
+                            Dívida: R$ {client.divida.toFixed(2)}
+                        </div>
+                        <div className="actions">
+                            {client.divida > 0 && (
                                 <button
-                                    type="button"
-                                    className="btn btn-danger mt-2"
-                                    onClick={() => setEditClientModal(false)} // Fecha o modal
+                                    className="btn btn-info btn-sm"
+                                    onClick={() => openPaymentModal(client)}
                                 >
-                                    Cancelar
+                                    <span className='material-symbols-outlined'>attach_money</span> Pagar
                                 </button>
-                            </div>
-                        </form>
+                            )}
+                             <button
+                                className="btn btn-warning btn-sm"
+                                onClick={() => openEditingModal(client)}
+                            >
+                                <span className='material-symbols-outlined'>edit</span> Editar
+                            </button>
+                            {client.divida === 0 && (
+                                <button
+                                    className="btn-icon delete-icon"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteClient(client.id, client.nome);
+                                    }}
+                                    title='Deletar Cliente'
+                                >
+                                    <span className='material-symbols-outlined'>delete</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
+                ))}
+            </div>
 
-            <button className="btn btn-dark" id="addClient" onClick={handleAddClient}>+</button>
-
-            {addClient &&
-                (
-                    <div id="addClientContainer">
-                        <form id="addClientForm" onSubmit={createClient}>
-                            <button type="button" onClick={closeForm} id="closeFormButton">X</button>
-                            <input
-                                type="text"
-                                placeholder="Nome"
-                                className="form-control"
-                                value={newClient.nome}
-                                onChange={(e) => setNewClient({ ...newClient, nome: e.target.value })}
-                            />
-                            <input
-                                type="text"
-                                placeholder="Telefone"
-                                className="form-control"
-                                value={newClient.telefone}
-                                onChange={(e) => setNewClient({ ...newClient, telefone: e.target.value })}
-                            />
-                            <input
-                                type="number"
-                                placeholder="Fiado"
-                                className="form-control"
-                                value={newClient.divida}
-                                onChange={(e) => setNewClient({ ...newClient, divida: e.target.value })}
-                            />
-                            <button type="submit" className="btn btn-dark form-control">Adicionar</button>
-                        </form>
-                    </div>
-                )}
-
-<button onClick={gerarPDF} className="btn btn-primary" style={{ margin: '10px 0' }}>
-                GERAR LISTA
+            {/* Botão Flutuante para Adicionar Cliente */}
+            <button id="addClient" onClick={() => setShowAddClientModal(true)} title="Adicionar Novo Cliente">
+                <span className="material-symbols-outlined">add</span>
             </button>
 
+            {/* --- Modais --- */} 
+
+            {/* Modal Adicionar Cliente */} 
+            {showAddClientModal && (
+                <div id="addClientContainer" className="modal-background">
+                    <form id="addClientForm" className="modal-content" onSubmit={createClient}>
+                        <button type="button" id="closeFormButton" className="material-symbols-outlined" onClick={() => setShowAddClientModal(false)}>close</button>
+                        <h2>Novo Cliente</h2>
+                        <label htmlFor="newClientName">Nome:</label>
+                        <input
+                            type="text"
+                            id="newClientName"
+                            value={newClient.nome}
+                            onChange={(e) => setNewClient({ ...newClient, nome: e.target.value })}
+                            required
+                        />
+                        <label htmlFor="newClientPhone">Telefone:</label>
+                        <input
+                            type="tel"
+                            id="newClientPhone"
+                            value={newClient.telefone}
+                            onChange={(e) => setNewClient({ ...newClient, telefone: e.target.value })}
+                            required
+                        />
+                        <div className="modal-actions">
+                            <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Salvando...' : 'Salvar Cliente'}</button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
+            {/* Modal Editar Cliente (COM CAMPO DE DÍVIDA) */} 
+            {showEditClientModal && selectedClient && (
+                <div id="editClientModal" className="modal-background">
+                    <form id="editClientForm" className="modal-content" onSubmit={saveEditedClientData}>
+                         <button type="button" id="closeEditButton" className="material-symbols-outlined" onClick={() => setShowEditClientModal(false)}>close</button>
+                        <h2>Editar Cliente</h2>
+                        <label htmlFor="editClientName">Nome:</label>
+                        <input
+                            type="text"
+                            id="editClientName"
+                            name="nome" // importante ter o name para o handler
+                            value={selectedClient.nome}
+                            onChange={handleEditInputChange}
+                            required
+                        />
+                        <label htmlFor="editClientPhone">Telefone:</label>
+                        <input
+                            type="tel"
+                            id="editClientPhone"
+                            name="telefone"
+                            value={selectedClient.telefone}
+                            onChange={handleEditInputChange}
+                            required
+                        />
+                        {/* CAMPO PARA EDITAR DÍVIDA */}
+                        <label htmlFor="editClientDebt">Dívida Atual:</label>
+                        <input
+                            type="number"
+                            id="editClientDebt"
+                            name="divida" // importante ter o name
+                            step="0.01"
+                            min="0" // Dívida não pode ser negativa
+                            value={selectedClient.divida} // Controlado pelo estado
+                            onChange={handleEditInputChange}
+                            required
+                        />
+                        <p style={{fontSize: '0.8em', color: 'var(--secondary-color)', marginTop: '-10px', marginBottom: '15px'}}>Ajuste manual da dívida. Use com cuidado.</p>
+
+                        <div className="modal-actions">
+                            <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Salvando...' : 'Salvar Alterações'}</button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
+            {/* Modal Pagamento */} 
+            {showPaymentModal && selectedClient && (
+                <div id="paymentModal" className="modal-background">
+                    <form id="paymentBody" className="modal-content" onSubmit={handlePayment}>
+                        <button type="button" id="closePaymentButton" className="material-symbols-outlined" onClick={() => setShowPaymentModal(false)}>close</button>
+                        <h2>Pagar Dívida</h2>
+                        <p>Cliente: <strong>{selectedClient.nome}</strong></p>
+                        <p>Dívida Atual: <strong>R$ {selectedClient.divida.toFixed(2)}</strong></p>
+
+                        <label htmlFor="paymentValue">Valor do Pagamento:</label>
+                        <input
+                            type="number"
+                            id="paymentValue"
+                            step="0.01"
+                            min="0.01"
+                            max={selectedClient.divida} // Não permitir pagar mais que a dívida
+                            value={payment}
+                            onChange={(e) => setPayment(e.target.value)} // Atualiza como string
+                            placeholder="0.00"
+                            required
+                        />
+                         <label htmlFor="paymentMethodSelect">Forma de Pagamento:</label>
+                         <select 
+                            id="paymentMethodSelect" 
+                            value={paymentMethod} 
+                            onChange={(e) => setPaymentMethod(e.target.value)}
+                            required
+                         >
+                            <option value="" disabled>-- Selecione --</option>
+                            <option value="Dinheiro">Dinheiro</option>
+                            <option value="Pix">Pix</option>
+                            {/* Adicionar outras formas se necessário */}
+                         </select>
+
+                        <div className="modal-actions">
+                            <button id="confirmPayment" type="submit" className="btn btn-success" disabled={loading || !payment || !paymentMethod || parseFloat(payment) <= 0 || parseFloat(payment) > selectedClient.divida}>
+                                {loading ? 'Processando...' : 'Confirmar Pagamento'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
         </div>
     );
 };
 
 export default Clientes;
+
