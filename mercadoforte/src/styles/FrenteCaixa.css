@@ -1,13 +1,13 @@
 /* --- Variáveis e Reset Básico --- */
 :root {
-    --primary-color: #007bff; /* Azul primário */
-    --secondary-color: #6c757d; /* Cinza secundário */
-    --success-color: #28a745; /* Verde sucesso */
-    --danger-color: #dc3545; /* Vermelho perigo */
-    --light-bg: #f8f9fa; /* Fundo claro */
-    --dark-text: #343a40; /* Texto escuro */
-    --light-text: #f8f9fa; /* Texto claro */
-    --border-color: #dee2e6; /* Cor da borda */
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --light-bg: #f8f9fa;
+    --dark-text: #343a40;
+    --light-text: #f8f9fa;
+    --border-color: #dee2e6;
     --shadow-sm: 0 .125rem .25rem rgba(0, 0, 0, .075);
     --shadow-md: 0 .5rem 1rem rgba(0, 0, 0, .15);
     --border-radius: .375rem; /* 6px */
@@ -21,18 +21,20 @@
 
 body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    background-color: #e9ecef; /* Fundo geral um pouco mais escuro */
+    background-color: #e9ecef;
     color: var(--dark-text);
 }
 
 /* --- Container Principal --- */
-#frenteCaixaContainer {
+#frente-caixa-container {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    padding: 15px; /* Add padding to the main container */
+    gap: 20px;
 }
 
-#companyTag {
+/* --- Cabeçalho do Operador --- */
+.cashier-header {
     background-color: var(--dark-text);
     color: var(--light-text);
     padding: 10px 15px;
@@ -40,37 +42,106 @@ body {
     justify-content: space-between;
     align-items: center;
     font-weight: bold;
+    font-size: 10px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 10px; /* Add margin below header */
 }
 
-#logoutButton {
-    background: none;
+.btn-logout-cashier {
+    background: var(--danger-color);
     border: none;
     color: var(--light-text);
     cursor: pointer;
-    font-size: 1.2em;
+    font-size: 0.9em;
+    padding: 5px 10px;
+    border-radius: var(--border-radius);
+    transition: background-color 0.2s ease;
 }
 
-/* --- Layout Principal (Mobile First) --- */
-#frenteCaixa {
-    display: flex;
-    flex-direction: column;
-    padding: 15px;
-    gap: 20px;
-    flex-grow: 1; /* Ocupa espaço vertical disponível */
+.btn-logout-cashier:hover {
+    background-color: #c82333;
 }
 
-/* --- Lista de Compras --- */
-#shoppingList {
+/* --- Container de Busca --- */
+.search-container {
     background-color: #fff;
     border-radius: var(--border-radius);
     padding: 15px;
     box-shadow: var(--shadow-sm);
-    overflow-y: auto;
-    max-height: 40vh; /* Limita altura no mobile */
     border: 1px solid var(--border-color);
+    position: relative; /* For positioning search results */
 }
 
-.product {
+.search-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 1em;
+    margin-bottom: 5px; /* Reduced margin */
+}
+
+.search-results {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 150px;
+    overflow-y: auto;
+    position: absolute; /* Position below input */
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    left: 15px; /* Align with padding */
+    right: 15px; /* Align with padding */
+    z-index: 100; /* Ensure it's above other elements */
+    box-shadow: var(--shadow-sm);
+}
+
+.search-results li {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px dashed var(--border-color);
+    font-size: 0.9em;
+}
+
+.search-results li:last-child {
+    border-bottom: none;
+}
+
+.search-results li:hover {
+    background-color: var(--light-bg);
+}
+
+/* --- Container da Lista de Compras (Carrinho) --- */
+.shopping-list-container {
+    background-color: #fff;
+    border-radius: var(--border-radius);
+    padding: 15px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    flex-grow: 1; /* Takes available space */
+    overflow-y: auto; /* Scroll if needed */
+    max-height: 150px; /* Limit height on mobile */
+}
+
+.shopping-list-container h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.shopping-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.shopping-list li {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -79,89 +150,37 @@ body {
     font-size: 0.95em;
 }
 
-.product:last-child {
+.shopping-list li:last-child {
     border-bottom: none;
 }
 
-.product span {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+.shopping-list li span:first-child { /* Quantity and Name */
+    flex-grow: 1;
+    margin-right: 10px;
 }
 
-.remove-btn {
+.shopping-list li span:nth-child(2) { /* Price */
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.remove-item-btn {
     background: none;
     border: none;
     color: var(--danger-color);
     cursor: pointer;
     padding: 0 5px;
-}
-
-.remove-btn .material-symbols-outlined {
+    margin-left: 10px;
     font-size: 1.2em;
-    vertical-align: middle;
+    line-height: 1;
 }
 
-/* --- Container Secundário (Busca e Checkout) --- */
-#secondContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+.remove-item-btn:hover {
+    color: #a0212e;
 }
 
-/* --- Barra de Busca --- */
-#searchBar {
-    background-color: #fff;
-    border-radius: var(--border-radius);
-    padding: 15px;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-color);
-}
-
-#searchProduct {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    font-size: 1em;
-    margin-bottom: 10px;
-}
-
-#searchResult {
-    max-height: 150px; /* Limita altura dos resultados */
-    overflow-y: auto;
-}
-
-.search-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 5px;
-    cursor: pointer;
-    border-bottom: 1px dashed var(--border-color);
-    font-size: 0.9em;
-}
-
-.search-item:last-child {
-    border-bottom: none;
-}
-
-.search-item:hover {
-    background-color: var(--light-bg);
-}
-
-.search-item span:first-child { /* Nome */
-    font-weight: bold;
-    flex-grow: 1; /* Ocupa mais espaço */
-    margin-right: 10px;
-}
-
-.search-item span:not(:first-child) {
-    color: var(--secondary-color);
-    white-space: nowrap;
-}
-
-/* --- Checkout --- */
-#checkout {
+/* --- Container de Controles e Total --- */
+.controls-total-container {
     background-color: #fff;
     border-radius: var(--border-radius);
     padding: 15px;
@@ -170,68 +189,82 @@ body {
     display: flex;
     flex-direction: column;
     gap: 15px;
+    height: 330px;
 }
 
-#totalValue {
-    font-size: 1.8em;
-    font-weight: bold;
-    color: var(--primary-color);
-    text-align: center;
-    margin-bottom: 10px;
-}
-
-#extraValues {
-    display: flex;
-    flex-direction: column; /* Empilha no mobile */
+.controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Responsive grid */
     gap: 10px;
 }
 
-#extraValues input {
+.control-group label {
+    display: block;
+    font-size: 12px;
+    margin-bottom: 3px;
+    color: var(--secondary-color);
+}
+
+.control-group input {
+    width: 100%;
+    height: 25px;
     padding: 8px 10px;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    font-size: 0.9em;
-    width: 100%;
+    font-size: 12px;
 }
 
-#checkoutButtons {
+.total-display h4 {
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--primary-color);
+    text-align: center;
+    margin: 10px 0;
+}
+
+.action-buttons {
     display: flex;
     gap: 10px;
     margin-top: 10px;
 }
 
-#checkoutButtons .btn {
-    flex-grow: 1; /* Ocupa espaço igual */
+.action-buttons button {
+    flex-grow: 1;
     padding: 12px 15px;
-    font-size: 1.1em;
+    font-size: 14px;
     border: none;
     border-radius: var(--border-radius);
     cursor: pointer;
     transition: background-color 0.2s ease;
+    width: 110px;
 }
 
-.btn-success {
+.action-buttons .btn-save-sale {
     background-color: var(--success-color);
     color: white;
+    width: 120px;
+    height: 50px;
 }
-.btn-success:hover:not(:disabled) {
+.btn-save-sale:hover:not(:disabled) {
     background-color: #218838;
 }
-.btn-success:disabled {
+.btn-save-sale:disabled {
     opacity: 0.65;
     cursor: not-allowed;
 }
 
-.btn-danger {
+.action-buttons .btn-cancel-sale {
     background-color: var(--danger-color);
     color: white;
+    width: 35px;
+    height: 50px;
 }
-.btn-danger:hover {
+.btn-cancel-sale:hover {
     background-color: #c82333;
 }
 
-/* --- Modal de Pagamento --- */
-#background {
+/* --- Modal de Salvamento da Venda --- */
+.modal-overlay.save-shopping-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -245,7 +278,7 @@ body {
     padding: 15px;
 }
 
-#saveShoppingContainer {
+.modal-content.save-shopping-content {
     background-color: white;
     padding: 25px;
     border-radius: var(--border-radius);
@@ -257,7 +290,7 @@ body {
     position: relative;
 }
 
-#closeShop {
+.close-modal-btn {
     position: absolute;
     top: 10px;
     right: 10px;
@@ -266,18 +299,21 @@ body {
     font-size: 1.6em;
     cursor: pointer;
     color: var(--secondary-color);
+    line-height: 1;
 }
-#closeShop:hover {
+.close-modal-btn:hover {
     color: var(--dark-text);
 }
 
-#saveShoppingContainer h2 {
+.modal-section h4 {
     text-align: center;
     margin-bottom: 20px;
     color: var(--dark-text);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
 }
 
-#saveShoppingContainer label {
+.save-shopping-content label {
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
@@ -285,9 +321,9 @@ body {
     font-size: 0.9em;
 }
 
-#saveShoppingContainer input[type="text"],
-#saveShoppingContainer input[type="number"],
-#saveShoppingContainer select {
+.save-shopping-content input[type="text"],
+.save-shopping-content input[type="number"],
+.save-shopping-content select {
     width: 100%;
     padding: 10px 12px;
     margin-bottom: 15px;
@@ -296,9 +332,17 @@ body {
     font-size: 1em;
 }
 
-#saveShoppingContainer input[readonly] {
+.save-shopping-content input[readonly],
+.save-shopping-content .read-only-group span {
     background-color: var(--light-bg);
-    cursor: not-allowed;
+    padding: 10px 12px;
+    border-radius: var(--border-radius);
+    display: inline-block; /* Or block if needed */
+    color: #555;
+}
+
+.read-only-group {
+    margin-bottom: 15px;
 }
 
 .client-suggestions {
@@ -310,6 +354,10 @@ body {
     border-radius: 0 0 var(--border-radius) var(--border-radius);
     max-height: 120px;
     overflow-y: auto;
+    background-color: #fff; /* Ensure background */
+    position: absolute; /* Position below input */
+    width: calc(100% - 50px); /* Match padding */
+    z-index: 110; /* Above modal content */
 }
 
 .client-suggestions li {
@@ -323,121 +371,134 @@ body {
     color: white;
 }
 
-.buttonArrow, .buttonArrowBack {
-    display: flex !important; /* Garante flex */
-    align-items: center;
-    justify-content: center;
-    padding: 10px !important;
-    width: 100%;
-    margin-top: 10px;
-    font-size: 1em !important;
+.modal-navigation {
+    display: flex;
+    justify-content: space-between; /* Space out buttons */
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-navigation button {
+    padding: 10px 15px;
+    font-size: 1em;
     border: none;
     border-radius: var(--border-radius);
     cursor: pointer;
     transition: background-color 0.2s ease;
+    flex-grow: 1; /* Make buttons fill space */
 }
 
-.buttonArrow {
+.btn-next {
     background-color: var(--primary-color);
     color: white;
 }
-.buttonArrow:hover:not(:disabled) {
+.btn-next:hover:not(:disabled) {
     background-color: #0056b3;
 }
-.buttonArrow:disabled {
+.btn-next:disabled {
      opacity: 0.65;
     cursor: not-allowed;
 }
 
-.buttonArrowBack {
+.btn-back {
     background-color: var(--secondary-color);
     color: white;
-    margin-top: 5px; /* Menor espaço para botão voltar */
 }
-.buttonArrowBack:hover {
+.btn-back:hover {
     background-color: #5a6268;
 }
 
-#saveShoppingContainer .btn-dark {
-    background-color: var(--dark-text);
+.btn-save-final {
+    background-color: var(--success-color);
     color: white;
-    width: 100%;
-    padding: 12px;
-    font-size: 1.1em;
-    margin-top: 15px;
-    border: none;
-    border-radius: var(--border-radius);
-    cursor: pointer;
 }
-#saveShoppingContainer .btn-dark:hover:not(:disabled) {
-    background-color: #23272b;
+.btn-save-final:hover:not(:disabled) {
+    background-color: #218838;
 }
-#saveShoppingContainer .btn-dark:disabled {
+.btn-save-final:disabled {
     opacity: 0.65;
     cursor: not-allowed;
 }
 
-.changeValue {
-    font-size: 1.1em;
-    font-weight: bold;
-    color: var(--success-color);
-    text-align: center;
-    margin: 10px 0;
+.payment-methods select {
+    appearance: none; /* Remove default arrow */
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007bff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.4-12.8z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 0.65em auto;
+    padding-right: 2.5rem; /* Space for arrow */
 }
 
-#calculateTotal {
-    font-size: 1.2em;
-    font-weight: bold;
-    text-align: center;
-    margin-top: 10px;
-    color: var(--primary-color);
-}
-
-/* --- Media Queries --- */
+/* --- Media Queries (Adjustments for larger screens) --- */
 
 /* Tablet (e telas maiores) */
 @media (min-width: 768px) {
-    #frenteCaixa {
-        flex-direction: row; /* Layout lado a lado */
-        align-items: flex-start; /* Alinha itens no topo */
+    #frente-caixa-container {
+        flex-direction: row; /* Side-by-side layout */
+        align-items: flex-start;
+        gap: 30px;
     }
 
-    /* Lista de compras ocupa mais espaço */
-    #shoppingList {
-        flex: 2; /* Ocupa 2/3 do espaço */
-        max-height: calc(100vh - 100px); /* Altura maior em telas grandes, descontando header e padding */
+    /* Main content area (search, list, controls) */
+    .main-cashier-area {
+        flex: 3; /* Takes more space */
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
     }
 
-    /* Container de busca e checkout */
-    #secondContainer {
-        flex: 1; /* Ocupa 1/3 do espaço */
-        position: sticky; /* Fica fixo ao rolar */
-        top: 15px; /* Espaçamento do topo */
+    .shopping-list-container {
+        max-height: calc(100vh - 350px); /* Adjust height based on other elements */
+        order: 2; /* List below search */
     }
 
-    #extraValues {
-        flex-direction: row; /* Lado a lado */
-        gap: 10px;
+    .search-container {
+        order: 1; /* Search on top */
+    }
+
+    .controls-total-container {
+        order: 3; /* Controls at the bottom */
+        position: sticky;
+        bottom: 15px;
+    }
+
+    .controls {
+        grid-template-columns: repeat(3, 1fr); /* Three columns for controls */
+    }
+
+    .modal-content.save-shopping-content {
+        max-width: 600px;
     }
 }
 
 /* Desktop (telas ainda maiores) */
 @media (min-width: 1024px) {
-    #frenteCaixa {
+    #frente-caixa-container {
         padding: 20px 30px;
-        gap: 30px;
     }
 
-    #shoppingList {
-        flex: 3; /* Mais espaço para a lista */
-    }
-
-    #secondContainer {
-        flex: 2; /* Mais espaço para busca/checkout */
-    }
-
-    #saveShoppingContainer {
-        max-width: 600px;
+    .shopping-list-container {
+         max-height: calc(100vh - 300px); /* More height */
     }
 }
+
+/* --- Loading Spinner (Placeholder) --- */
+.loading-spinner {
+    /* Add styles for your loading spinner */
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-left-color: var(--primary-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Include LoginModal.css content here if not using separate file */
+/* @import url('./LoginModal.css'); */
+
 

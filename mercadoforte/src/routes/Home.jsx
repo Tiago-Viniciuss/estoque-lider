@@ -4,11 +4,12 @@ import { db } from '../firebaseConfig';
 import FrenteCaixa from '../components/FrenteCaixa';
 import CriarProduto from '../components/CriarProduto';
 import EditarProdutos from '../components/EditarProdutos';
-import '../styles/Home.css'; // Manter o CSS original por enquanto, será otimizado depois
 import Vendas from '../components/Vendas';
 import Clientes from '../components/Clientes';
 import Balanço from '../components/Balanço';
 import EntradaDeNotas from '../components/EntradaDeNotas';
+import Configuracoes from '../components/Configuracoes'; // Importar o componente Configuracoes
+import '../styles/Home.css'; // Manter o CSS original por enquanto, será otimizado depois
 import { useNavigate } from 'react-router-dom'; // Importar useNavigate
 
 // Mapeamento de seções para ícones
@@ -20,6 +21,7 @@ const menuItems = [
   { label: 'CLIENTES', section: 'Clientes', icon: 'group' },
   { label: 'ENTRADA DE NOTAS', section: 'EntradaDeNotas', icon: 'inventory' },
   { label: 'BALANÇO', section: 'Balanço', icon: 'monitoring' },
+  { label: 'CONFIGURAÇÕES', section: 'Configuracoes', icon: 'settings' }, // Adicionar item de menu para Configurações
 ];
 
 export const Home = () => {
@@ -73,10 +75,11 @@ export const Home = () => {
     fetchCompanyName();
   }, [empresaId]);
 
-  const logoutUser = () => {
-    localStorage.removeItem('empresaId');
-    navigate('/'); // Usar navigate para redirecionar
-  };
+  // Removido logoutUser daqui, pois agora está dentro de Configuracoes
+  // const logoutUser = () => {
+  //   localStorage.removeItem('empresaId');
+  //   navigate('/'); // Usar navigate para redirecionar
+  // };
 
   const handleMenuItemClick = (section) => {
     setActiveSection(section);
@@ -100,14 +103,11 @@ export const Home = () => {
         {/* Botão de menu só aparece em mobile (controlado via CSS) */}
         <button className='material-symbols-outlined' id='openMenu' onClick={openMenu}>menu</button>
       </header>
-      {/* Nome da Empresa
-      
-      
+      {/* Nome da Empresa (Removido daqui, pode ser exibido dentro de Configurações ou em outro local) */}
+      {/* 
       <span id='companyTag'>
         {companyName} <button id='logoutButton' className='material-symbols-outlined' onClick={logoutUser} title="Sair">logout</button>
       </span>
-      
-      
       */}
       
       <p id='logoSlogan'>Automações e Tecnologia <br />
@@ -122,6 +122,7 @@ export const Home = () => {
         {activeSection === 'Vendas' && <Vendas />}
         {activeSection === 'Clientes' && <Clientes />}
         {activeSection === 'EntradaDeNotas' && <EntradaDeNotas />}
+        {activeSection === 'Configuracoes' && <Configuracoes />} {/* Adicionar renderização condicional para Configurações */}
       </main>
 
       {/* Overlay do Menu (Mobile) */}

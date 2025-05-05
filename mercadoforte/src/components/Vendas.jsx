@@ -559,6 +559,7 @@ const Vendas = ({ onTotalChange }) => {
                             <span><strong>Valor: </strong>R${(sale.TotalVenda || 0).toFixed(2)}</span>
                             <span><strong>Data: </strong>{sale.Data?.seconds ? new Date(sale.Data.seconds * 1000).toLocaleString('pt-BR') : 'Data inválida'}</span>
                             <span><strong>FP: </strong>{sale.FormaPagamento || 'N/A'}</span>
+                            <span><strong>ID: </strong>{sale.id || 'N/A'}</span>
                         </li>
                     ))}
                 </ul>
