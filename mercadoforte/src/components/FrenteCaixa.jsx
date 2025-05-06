@@ -371,7 +371,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
     let valorFiado = 0;
     let troco = 0;
 
-    // Calcula quanto falta pagar DEPOIS de aplicar o dinheiro e o pix
+    // Calcula quanto falta pagar DEPOIS de aplicar o dinheiro e o pix erro
     const restanteAposPagamentos = totalCalculado - valorPagoDinheiro - valorPagoPix;
 
     if (restanteAposPagamentos > 0) {
@@ -575,11 +575,11 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
     valorTrocoFinal = parseFloat(valorTrocoFinal.toFixed(2));
 
     // Validação: Troco e Fiado não podem coexistir
-    if (valorTrocoFinal > 0 && valorFiadoFinal > 0) {
+    /*if (valorTrocoFinal > 0 && valorFiadoFinal > 0) {
       alert(`Erro de lógica: Não pode haver troco (R$ ${valorTrocoFinal.toFixed(2)}) e valor fiado (R$ ${valorFiadoFinal.toFixed(2)}) ao mesmo tempo.`);
       return;
-    }
-
+    }*/
+   
     // Validação: Método Fiado não pode ter pagamento ou troco
     if (paymentMethod === 'Fiado' && (valorPagoTotalEfetivo > 0 || valorTrocoFinal > 0)) {
       alert("Para vendas Fiado, os valores pagos devem ser zero e não deve haver troco.");
