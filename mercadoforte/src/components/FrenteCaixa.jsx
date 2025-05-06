@@ -710,7 +710,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
             <ul className="shopping-list">
               {shoppingList.map((product, index) => (
                 <li key={index}>
-                  <span>{product.quantity}x {product.nome}</span>
+                  <span>{product.nome} - {product.quantity} {product.quantity === 1 ? 'unidade' : 'unidades'}</span>
                   <span>R$ {(parseFloat(product.preco || 0) * product.quantity).toFixed(2)}</span>
                   <button onClick={() => removeFromShoppingList(index)} className="remove-item-btn" disabled={saveShoppingContainer}>×</button>
                 </li>
@@ -787,7 +787,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                     {/* Seção Cliente (sem alterações) */}
                     {clientSection && (
                       <div className="modal-section">
-                        <h4>Cliente</h4>
+                        <h4>Dados do Cliente</h4>
                         <div className="form-group">
                           <label htmlFor="clientName">Nome:</label>
                           <input
@@ -801,7 +801,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                             <ul className="client-suggestions">
                               {clientSuggestions.map((client) => (
                                 <li key={client.id} onClick={() => selectClient(client)}>
-                                  {client.nome} {client.telefone ? `(${client.telefone})` : ''}
+                                  {client.nome} {client.telefone ? `- ${client.telefone}` : ''}
                                 </li>
                               ))}
                             </ul>

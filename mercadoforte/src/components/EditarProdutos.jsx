@@ -5,7 +5,7 @@ import LoadingSpinner from '../components/LoadingSpinner.jsx'; // Ajuste o camin
 import '../styles/EditarProdutos.css'; // Importa o CSS refatorado
 
 // --- Constantes --- 
-const CATEGORIES = ['alimentos', 'bebidas', 'higiene', 'limpeza', 'utilidades', 'botijão', 'Todos'];
+const CATEGORIES = ['alimentos', 'bebidas', 'higiene', 'limpeza', 'utilidades', 'Todos'];
 const DEFAULT_PROFIT_MARGIN = 30;
 
 // --- Funções Utilitárias --- (Podem ser movidas para um arquivo utils.js)
@@ -64,23 +64,17 @@ const ProductTable = React.memo(({ products, onEdit }) => {
                     <tr>
                         <th className="product-name">Nome</th>
                         <th className="product-code">Código</th>
-                        <th className="product-price">Preço Unitário</th>
+                        <th className="product-price">Preço</th>
                         <th className="product-stock">Estoque</th>
-                        <th className="actions-cell">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     {products.map((product) => (
                         <tr key={product.id} className={`product-item ${product.estoque < 10 ? 'low-stock-row' : ''}`}>
-                            <td className={`product-name ${product.estoque < 10 ? 'low-stock' : ''}`}>{product.nome}</td>
+                            <td className={`product-name ${product.estoque < 10 ? 'low-stock' : ''}`} onClick={() => onEdit(product)}>{product.nome}</td>
                             <td className={`product-code ${product.estoque < 10 ? 'low-stock' : ''}`}>{product.codigo}</td>
                             <td className={`product-price ${product.estoque < 10 ? 'low-stock' : ''}`}>R$ {product.preco?.toFixed(2) ?? '0.00'}</td>
                             <td className={`product-stock ${product.estoque < 10 ? 'low-stock' : ''}`}>{product.estoque}</td>
-                            <td className="actions-cell">
-                                <button onClick={() => onEdit(product)} className='btn-edit' title="Editar Produto">
-                                    <span className='material-symbols-outlined'>edit</span>
-                                </button>
-                            </td>
                         </tr>
                     ))}
                 </tbody>
@@ -104,7 +98,7 @@ const ProductEditForm = ({ product, onClose, onUpdate, onDelete, loading }) => {
                 preco: product.preco?.toFixed(2) ?? '',
                 estoque: product.estoque ?? 0,
                 codigo: product.codigo || '',
-                precoCusto: product.precoCusto?.toFixed(2) ?? '',
+                precoCusto: product.precoCusto || '',
             });
             setProfitMargin(product.margemLucro ?? DEFAULT_PROFIT_MARGIN);
             setManualPriceEdit(false); // Reset manual edit flag on product change

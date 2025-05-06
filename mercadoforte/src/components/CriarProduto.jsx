@@ -41,6 +41,14 @@ const CriarProduto = () => {
         setManualPriceEdit(true); // Se o usuário edita manualmente, não recalcula automaticamente
     };
 
+
+    const generateKeywords = (name) => {
+        if (!name) return [];
+        const lowerCaseName = name.toLowerCase();
+        const words = lowerCaseName.match(/\w+(\'\w+)?/g);
+        return words || [];
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -48,7 +56,7 @@ const CriarProduto = () => {
             setMessage('Por favor, preencha todos os campos.');
             return;
         }
-
+        const keywords = generateKeywords(productName);
         const productExists = await getDoc(doc(db, `Empresas/${empresaId}/Produtos`, productCode));
         if (productExists.exists()) {
             setMessage('Erro: O código do produto já existe.');
@@ -56,6 +64,7 @@ const CriarProduto = () => {
         }
 
         try {
+            
             await setDoc(doc(db, `Empresas/${empresaId}/Produtos`, productCode), {
                 categoria: productCategory,
                 nome: productName,
@@ -64,6 +73,8 @@ const CriarProduto = () => {
                 preco: parseFloat(productPrice),
                 estoque: parseInt(stockQuantity, 10),
                 codigo: productCode,
+                keywords: keywords,
+                keywordsMinusculo: keywords.map(k => k.toLowerCase()),
             });
 
             setMessage('Produto criado com sucesso!');
@@ -97,7 +108,6 @@ const CriarProduto = () => {
                         <option value="bebidas">Bebidas</option>
                         <option value="higiene">Higiene</option>
                         <option value="limpeza">Limpeza</option>
-                        <option value="botijão">Botijão</option>
                         <option value="pagamento">Pagamento</option>
                         <option value="utilidades">Utilidades</option>
                     </select>

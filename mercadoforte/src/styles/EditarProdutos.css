@@ -15,9 +15,9 @@
     --spacing-sm: 10px;
     --spacing-md: 15px;
     --spacing-lg: 25px;
-    --font-size-sm: 0.875rem; /* 14px */
-    --font-size-md: 1rem; /* 16px */
-    --font-size-lg: 1.125rem; /* 18px */
+    --font-size-sm: 12px;
+    --font-size-md: 12px; 
+    --font-size-lg: 14px; 
 }
 
 /* === Estilos Base === */
@@ -79,24 +79,24 @@
 }
 
 /* === Tabela de Produtos === */
-.products-list-section {
-    overflow-x: auto; /* Permite rolagem horizontal em telas pequenas */
+.products-list-section {/* Permite rolagem horizontal em telas pequenas */
     background-color: var(--background-white);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-color);
+    width: 100%;
+    background-color: var(--background-light)
 }
 
 .products-table {
     width: 100%;
-    border-collapse: collapse;
     font-size: var(--font-size-sm);
     text-align: left;
+    background-color: var(--background-light)
 }
 
 .products-table th,
 .products-table td {
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: 1px;
     border-bottom: 1px solid var(--border-color);
     vertical-align: middle;
 }
@@ -116,26 +116,29 @@
 }
 
 .products-table .product-name {
-    /* Estilos específicos para nome, se necessário */
+    font-size: 12px;
 }
 
 .products-table .product-code {
-    /* Estilos específicos para código, se necessário */
+    font-size: 12px;
+    padding-right: 5px;
 }
 
 .products-table .product-price {
-    text-align: right; /* Alinha preços à direita */
-    min-width: 100px; /* Garante espaço mínimo */
+    text-align: left; /* Alinha preços à direita */
+    min-width: 60px; /* Garante espaço mínimo */
+    font-size: 12px;
+    padding-left: 6px;
 }
 
 .products-table .product-stock {
     text-align: center; /* Centraliza estoque */
     min-width: 80px;
+    font-size: 12px;
 }
 
 .products-table .low-stock {
     color: var(--danger-color);
-    font-weight: bold;
 }
 
 .products-table .actions-cell {
@@ -151,6 +154,7 @@
     padding: var(--spacing-xs);
     margin-left: var(--spacing-sm);
     vertical-align: middle;
+    font-size: 12px;
 }
 
 .products-table .btn-edit .material-symbols-outlined {
@@ -255,6 +259,22 @@
     background-color: #23272b; /* Tom mais escuro */
 }
 
+#productAlert {
+    height: 100vh;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.723);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+#productAlert p {
+    color: white;
+    font-size: 18px;
+}
 
 /* === Media Queries para Responsividade === */
 
