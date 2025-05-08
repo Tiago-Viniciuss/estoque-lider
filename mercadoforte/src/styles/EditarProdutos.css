@@ -117,6 +117,7 @@
 
 .products-table .product-name {
     font-size: 12px;
+    cursor: pointer;
 }
 
 .products-table .product-code {

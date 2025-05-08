@@ -3,6 +3,8 @@ import { doc, setDoc, getDocs, collection, deleteDoc, query, where } from 'fireb
 import { db } from '../firebaseConfig'; // Ajuste o caminho conforme necessário
 import LoadingSpinner from '../components/LoadingSpinner.jsx'; // Ajuste o caminho conforme necessário
 import '../styles/EditarProdutos.css'; // Importa o CSS refatorado
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 // --- Constantes --- 
 const CATEGORIES = ['alimentos', 'bebidas', 'higiene', 'limpeza', 'utilidades', 'Todos'];
@@ -46,13 +48,13 @@ const ProductFilter = React.memo(({ currentCategory, onFilterChange, currentSear
                 placeholder="Buscar produto por nome..."
                 value={currentSearch}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className='search-input form-control' // Adiciona form-control se quiser estilos do Bootstrap
+                className='search-input form-control'
             />
         </div>
     );
 });
 
-const ProductTable = React.memo(({ products, onEdit }) => {
+const ProductTable = React.memo(({ products, onEdit, onSelectProduct, selectedProducts }) => {
     if (products.length === 0) {
         return <p>Nenhum produto encontrado.</p>;
     }
@@ -62,18 +64,20 @@ const ProductTable = React.memo(({ products, onEdit }) => {
             <table className="products-table">
                 <thead>
                     <tr>
+                        <th>Selecionar</th>
                         <th className="product-name">Nome</th>
                         <th className="product-code">Código</th>
-                        <th className="product-price">Preço</th>
+                        <th className="product-price">Preço Venda</th>
                         <th className="product-stock">Estoque</th>
                     </tr>
                 </thead>
                 <tbody>
                     {products.map((product) => (
                         <tr key={product.id} className={`product-item ${product.estoque < 10 ? 'low-stock-row' : ''}`}>
+                            <td><input type="checkbox" checked={selectedProducts.includes(product.id)} onChange={() => onSelectProduct(product.id)} /></td>
                             <td className={`product-name ${product.estoque < 10 ? 'low-stock' : ''}`} onClick={() => onEdit(product)}>{product.nome}</td>
                             <td className={`product-code ${product.estoque < 10 ? 'low-stock' : ''}`}>{product.codigo}</td>
-                            <td className={`product-price ${product.estoque < 10 ? 'low-stock' : ''}`}>R$ {product.preco?.toFixed(2) ?? '0.00'}</td>
+                            <td className={`product-price ${product.estoque < 10 ? 'low-stock' : ''}`}>R$ {typeof product.preco === 'number' ? product.preco.toFixed(2) : '0.00'}</td>
                             <td className={`product-stock ${product.estoque < 10 ? 'low-stock' : ''}`}>{product.estoque}</td>
                         </tr>
                     ))}
@@ -88,20 +92,20 @@ const ProductEditForm = ({ product, onClose, onUpdate, onDelete, loading }) => {
     const [profitMargin, setProfitMargin] = useState(DEFAULT_PROFIT_MARGIN);
     const [suggestedPrice, setSuggestedPrice] = useState('');
     const [manualPriceEdit, setManualPriceEdit] = useState(false);
-    const empresaId = localStorage.getItem('empresaId'); // Necessário para delete
+    const empresaId = localStorage.getItem('empresaId');
 
     useEffect(() => {
         if (product) {
             setFormData({
                 categoria: product.categoria || '',
                 nome: product.nome || '',
-                preco: product.preco?.toFixed(2) ?? '',
+                preco: typeof product.preco === 'number' ? product.preco.toFixed(2) : '',
                 estoque: product.estoque ?? 0,
                 codigo: product.codigo || '',
-                precoCusto: product.precoCusto || '',
+                precoCusto: typeof product.precoCusto === 'number' ? product.precoCusto.toFixed(2) : '',
             });
             setProfitMargin(product.margemLucro ?? DEFAULT_PROFIT_MARGIN);
-            setManualPriceEdit(false); // Reset manual edit flag on product change
+            setManualPriceEdit(false);
         }
     }, [product]);
 
@@ -109,7 +113,6 @@ const ProductEditForm = ({ product, onClose, onUpdate, onDelete, loading }) => {
         if (!manualPriceEdit) {
             const price = calculateSuggestedPrice(formData.precoCusto, profitMargin);
             setSuggestedPrice(price);
-            // Atualiza o preço final apenas se o preço sugerido for válido e diferente
             if (price !== '' && price !== formData.preco) {
                  setFormData(prev => ({ ...prev, preco: price }));
             }
@@ -144,7 +147,7 @@ const ProductEditForm = ({ product, onClose, onUpdate, onDelete, loading }) => {
         const keywords = generateKeywords(formData.nome);
 
         const updatedProductData = {
-            ...product, // Mantém outros campos não editáveis
+            ...product, 
             categoria: formData.categoria,
             nome: formData.nome,
             nomeMinusculo: formData.nome.toLowerCase(),
@@ -163,7 +166,7 @@ const ProductEditForm = ({ product, onClose, onUpdate, onDelete, loading }) => {
         if (!product || !product.id || !empresaId) return;
         const confirmDelete = window.confirm(`Tem certeza que deseja excluir o produto "${product.nome}"?`);
         if (confirmDelete) {
-            onDelete(product.id, product.nome); // Passa ID e nome para feedback
+            onDelete(product.id, product.nome); 
         }
     };
 
@@ -176,14 +179,7 @@ const ProductEditForm = ({ product, onClose, onUpdate, onDelete, loading }) => {
 
             <div className="form-group">
                 <label htmlFor="productCategory">Categoria</label>
-                <select
-                    name="categoria"
-                    id="productCategory"
-                    className="form-control"
-                    value={formData.categoria}
-                    onChange={handleChange}
-                    required
-                >
+                <select name="categoria" id="productCategory" className="form-control" value={formData.categoria} onChange={handleChange} required>
                     <option value="">Selecione...</option>
                     {CATEGORIES.filter(c => c !== 'Todos').map(cat => (
                         <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
@@ -193,83 +189,33 @@ const ProductEditForm = ({ product, onClose, onUpdate, onDelete, loading }) => {
 
             <div className="form-group">
                 <label htmlFor="productName">Nome</label>
-                <input
-                    type="text"
-                    name="nome"
-                    id="productName"
-                    value={formData.nome}
-                    onChange={handleChange}
-                    className="form-control"
-                    required
-                />
+                <input type="text" name="nome" id="productName" value={formData.nome} onChange={handleChange} className="form-control" required />
             </div>
 
             <div className="form-group">
                 <label htmlFor="productCode">Código</label>
-                <input
-                    type="text"
-                    name="codigo"
-                    id="productCode"
-                    value={formData.codigo}
-                    onChange={handleChange}
-                    className="form-control"
-                    // onKeyDown={...} // Manter se necessário
-                />
+                <input type="text" name="codigo" id="productCode" value={formData.codigo} onChange={handleChange} className="form-control" />
             </div>
 
             <div className="form-group">
                 <label htmlFor="costPrice">Preço de Custo</label>
-                <input
-                    type="number"
-                    name="precoCusto"
-                    id="costPrice"
-                    value={formData.precoCusto}
-                    onChange={handleChange}
-                    className="form-control"
-                    min="0"
-                    step="0.01"
-                />
+                <input type="number" name="precoCusto" id="costPrice" value={formData.precoCusto} onChange={handleChange} className="form-control" min="0" step="0.01" />
             </div>
 
             <div className="form-group">
                 <label htmlFor="profitMargin">Margem de Lucro (%)</label>
-                <input
-                    type="number"
-                    id="profitMargin"
-                    value={profitMargin}
-                    onChange={handleProfitMarginChange}
-                    className="form-control"
-                    min="0"
-                />
+                <input type="number" id="profitMargin" value={profitMargin} onChange={handleProfitMarginChange} className="form-control" min="0" />
             </div>
 
             <div className="form-group">
                 <label htmlFor="productPrice">Preço Unitário (Venda)</label>
-                <input
-                    type="number"
-                    name="preco"
-                    id="productPrice"
-                    value={formData.preco}
-                    onChange={handleChange}
-                    className="form-control"
-                    min="0"
-                    step="0.01"
-                    required
-                />
+                <input type="number" name="preco" id="productPrice" value={formData.preco} onChange={handleChange} className="form-control" min="0" step="0.01" required />
                  {suggestedPrice && !manualPriceEdit && <small>Preço Sugerido: R$ {suggestedPrice}</small>}
             </div>
 
             <div className="form-group">
                 <label htmlFor="stockQuantity">Estoque</label>
-                <input
-                    type="number"
-                    name="estoque"
-                    id="stockQuantity"
-                    value={formData.estoque}
-                    onChange={handleChange}
-                    className="form-control"
-                    min="0"
-                />
+                <input type="number" name="estoque" id="stockQuantity" value={formData.estoque} onChange={handleChange} className="form-control" min="0" />
             </div>
 
             <div className="form-actions">
@@ -295,6 +241,7 @@ const EditarProdutos = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const empresaId = localStorage.getItem('empresaId');
+    const [selectedProductsForPDF, setSelectedProductsForPDF] = useState([]); 
 
     const productsRef = useMemo(() => {
         if (!empresaId) return null;
@@ -331,17 +278,15 @@ const EditarProdutos = () => {
     useEffect(() => {
         let currentFiltered = [...allProducts];
 
-        // Filtrar por categoria
         if (filterCategory !== 'Todos') {
             currentFiltered = currentFiltered.filter(p => p.categoria === filterCategory);
         }
 
-        // Filtrar por termo de busca
         if (searchTerm) {
             const searchLower = searchTerm.toLowerCase();
             currentFiltered = currentFiltered.filter(p =>
                 p.nome.toLowerCase().includes(searchLower) ||
-                p.codigo?.toLowerCase().includes(searchLower) // Opcional: buscar por código também
+                p.codigo?.toLowerCase().includes(searchLower) 
             );
         }
 
@@ -355,15 +300,13 @@ const EditarProdutos = () => {
         try {
             const productRef = doc(db, `Empresas/${empresaId}/Produtos`, productId);
             await setDoc(productRef, updatedData, { merge: true });
-            setSelectedProduct(null); // Fecha o formulário
-            await fetchProducts(); // Rebusca produtos para garantir consistência
-            alert('Produto atualizado com sucesso!');
+            setSelectedProduct(null); 
+            await fetchProducts(); 
         } catch (err) {
             console.error('Erro ao atualizar produto:', err);
             setError('Falha ao salvar alterações. Tente novamente.');
-            setLoading(false); // Mantém loading se der erro para não fechar form
+            setLoading(false); 
         }
-        // setLoading(false) é chamado no finally do fetchProducts
     }, [productsRef, fetchProducts, empresaId]);
 
     const handleDeleteProduct = useCallback(async (productId, productName) => {
@@ -373,8 +316,7 @@ const EditarProdutos = () => {
         try {
             const productRef = doc(db, `Empresas/${empresaId}/Produtos`, productId);
             await deleteDoc(productRef);
-            setSelectedProduct(null); // Fecha o formulário
-            // Atualiza estado localmente para resposta mais rápida
+            setSelectedProduct(null); 
             setAllProducts(prev => prev.filter(p => p.id !== productId));
             alert(`Produto "${productName}" excluído com sucesso!`);
         } catch (err) {
@@ -391,6 +333,55 @@ const EditarProdutos = () => {
 
     const handleCloseEdit = () => {
         setSelectedProduct(null);
+    };
+
+    const handleSelectProductForPDF = (productId) => {
+        setSelectedProductsForPDF(prevSelected => {
+            if (prevSelected.includes(productId)) {
+                return prevSelected.filter(id => id !== productId);
+            } else {
+                return [...prevSelected, productId];
+            }
+        });
+    };
+
+    const handleGenerateShoppingList = () => {
+        const productsToPrint = allProducts.filter(p => selectedProductsForPDF.includes(p.id));
+        
+        if (productsToPrint.length === 0) {
+            alert("Nenhum produto selecionado para gerar a lista de compras.");
+            return;
+        }
+
+        const pdfDoc = new jsPDF();
+        pdfDoc.text("Lista de Compras", 14, 16);
+
+        const tableColumn = ["Nome", "Preço Custo (R$)", "Preço Venda (R$)", "Estoque Atual"];
+        const tableRows = [];
+
+        productsToPrint.forEach(product => {
+            const precoCusto = typeof product.precoCusto === 'number' ? product.precoCusto.toFixed(2) : '0.00';
+            const precoVenda = typeof product.preco === 'number' ? product.preco.toFixed(2) : '0.00';
+            const productData = [
+                product.nome || "N/A",
+                precoCusto,
+                precoVenda,
+                product.estoque ?? 0
+            ];
+            tableRows.push(productData);
+        });
+
+        pdfDoc.autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 20,
+            theme: 'grid',
+            headStyles: { fillColor: [22, 160, 133] },
+            styles: { font: 'helvetica', fontSize: 10 },
+        });
+        
+        pdfDoc.save("lista_de_compras.pdf");
+        
     };
 
     if (!empresaId) {
@@ -411,10 +402,24 @@ const EditarProdutos = () => {
                         currentSearch={searchTerm}
                         onSearchChange={setSearchTerm}
                     />
+                    <button 
+                        onClick={handleGenerateShoppingList} 
+                        className="btn btn-primary" 
+                        style={{ margin: '10px 0' }}
+                        disabled={selectedProductsForPDF.length === 0}
+                    >
+                        Gerar Lista de Compras
+                    </button>
+
                     {loading && allProducts.length === 0 ? (
                         <LoadingSpinner />
                     ) : (
-                        <ProductTable products={filteredProducts} onEdit={handleSelectProductEdit} />
+                        <ProductTable 
+                            products={filteredProducts} 
+                            onEdit={handleSelectProductEdit} 
+                            onSelectProduct={handleSelectProductForPDF} 
+                            selectedProducts={selectedProductsForPDF} 
+                        />
                     )}
                 </>
             ) : (

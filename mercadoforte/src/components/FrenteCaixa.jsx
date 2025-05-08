@@ -302,7 +302,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
     inputRef.current?.focus();
   };
 
-  
+
 
   useEffect(() => {
     endOfListRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -579,27 +579,14 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
       alert(`Erro de lógica: Não pode haver troco (R$ ${valorTrocoFinal.toFixed(2)}) e valor fiado (R$ ${valorFiadoFinal.toFixed(2)}) ao mesmo tempo.`);
       return;
     }*/
-   
+
     // Validação: Método Fiado não pode ter pagamento ou troco
     if (paymentMethod === 'Fiado' && (valorPagoTotalEfetivo > 0 || valorTrocoFinal > 0)) {
       alert("Para vendas Fiado, os valores pagos devem ser zero e não deve haver troco.");
       return;
     }
 
-    // Validação: Pagamento insuficiente (exceto se for Fiado)
-    if (paymentMethod !== 'Fiado' && valorPagoTotalEfetivo < totalVenda) {
-      // Confirma se o restante será fiado
-      if (!window.confirm(`O valor pago (R$ ${valorPagoTotalEfetivo.toFixed(2)}) é menor que o total da venda (R$ ${totalVenda.toFixed(2)}). Deseja registrar R$ ${valorFiadoFinal.toFixed(2)} como Fiado para ${clientName.trim()}?`)) {
-        return;
-      }
-    }
-
-    // Confirmação do Troco
-    if (valorTrocoFinal > 0) {
-      if (!window.confirm(`Troco a ser devolvido: R$ ${valorTrocoFinal.toFixed(2)}. Confirmar venda?`)) {
-        return;
-      }
-    }
+    
 
     setLoading(true);
     try {
@@ -683,7 +670,6 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
       }
 
       console.log('Venda salva com sucesso e estoque atualizado!');
-      alert(`Venda salva com sucesso! ${valorTrocoFinal > 0 ? `Troco: R$ ${valorTrocoFinal.toFixed(2)}` : ''}`);
       cancelList(true); // Força reset sem confirmação
 
     } catch (error) {
@@ -693,6 +679,13 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
       setLoading(false);
     }
   };
+
+
+  if (loading) {
+    return (
+      <LoadingSale />
+    )
+  }
 
   // --- Renderização --- 
   return (
@@ -721,59 +714,57 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
           </div>
 
           {/* Área de Busca e Lista de Compras (sem alterações visuais aqui) */}
-          <div className="search-container">
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder="Buscar por código ou nome"
-              value={searchTerm}
-              onChange={handleSearch}
-              onKeyDown={handleKeyDown}
-              className="search-input"
-              disabled={saveShoppingContainer}
-            />
-            {searchResults.length > 0 && (
-              <ul className="search-results">
-                {searchResults.map((product, index) => (
-                  <li key={index} onClick={() => handleResultClick(product)}>
-                    {product.nome} - R$ {parseFloat(product.preco).toFixed(2)}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-
-
-          {/* Controles e Total (sem alterações visuais aqui) */}
-          <div className="controls-total-container">
-
-            <div className="total-display">
-              <h4>Total: R$ {calculateTotal().toFixed(2)}</h4>
+          <section id='searchPaymentContainer'>
+            <div className="search-container">
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Buscar por código ou nome"
+                value={searchTerm}
+                onChange={handleSearch}
+                onKeyDown={handleKeyDown}
+                className="search-input"
+                disabled={saveShoppingContainer}
+              />
+              {searchResults.length > 0 && (
+                <ul className="search-results">
+                  {searchResults.map((product, index) => (
+                    <li key={index} onClick={() => handleResultClick(product)}>
+                      {product.nome} - R$ {parseFloat(product.preco).toFixed(2)}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-            <div className="action-buttons">
-              <button onClick={saveShoppingButton} className="btn-save-sale" disabled={shoppingList.length === 0 || saveShoppingContainer}>
-                Salvar Venda
-              </button>
-              <button onClick={() => cancelList()} className="btn-cancel-sale" disabled={saveShoppingContainer}>
-                <span className='material-symbols-outlined'>close</span>
-              </button>
-            </div>
-            <div className="controls">
-              <div className="control-group">
-                <label>Desconto (%):</label>
-                <input type="number" min="0" value={discount * 100} onChange={applyDiscount} disabled={saveShoppingContainer} />
+            {/* Controles e Total (sem alterações visuais aqui) */}
+            <div className="controls-total-container">
+              <div className="total-display">
+                <h4>Total: R$ {calculateTotal().toFixed(2)}</h4>
               </div>
-              <div className="control-group">
-                <label>Desconto (R$):</label>
-                <input type="number" min="0" value={discountAmount} onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)} disabled={saveShoppingContainer} />
+              <div className="action-buttons">
+                <button onClick={saveShoppingButton} className="btn-save-sale" disabled={shoppingList.length === 0 || saveShoppingContainer}>
+                  Salvar Venda
+                </button>
+                <button onClick={() => cancelList()} className="btn-cancel-sale" disabled={saveShoppingContainer}>
+                  <span className='material-symbols-outlined'>close</span>
+                </button>
               </div>
-              <div className="control-group">
-                <label>Acréscimo (R$):</label>
-                <input type="number" min="0" value={extraAmount} onChange={(e) => setExtraAmount(parseFloat(e.target.value) || 0)} disabled={saveShoppingContainer} />
+              <div className="controls">
+                <div className="control-group">
+                  <label>Desconto (%):</label>
+                  <input type="number" min="0"  onChange={applyDiscount} disabled={saveShoppingContainer} />
+                </div>
+                <div className="control-group">
+                  <label>Desconto (R$):</label>
+                  <input type="number" min="0"  onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)} disabled={saveShoppingContainer} />
+                </div>
+                <div className="control-group">
+                  <label>Acréscimo (R$):</label>
+                  <input type="number" min="0" onChange={(e) => setExtraAmount(parseFloat(e.target.value) || 0)} disabled={saveShoppingContainer} />
+                </div>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Modal de Salvamento da Venda (MODIFICADO) */}
           {saveShoppingContainer && (
@@ -878,6 +869,12 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                           </div>
                         )}
 
+                        {changeDue > 0 && (
+                          <div id="changeValue">
+                            <p>O troco deve ser <strong>R$ {changeDue.toFixed(2)}</strong></p>
+                          </div>
+                        )}
+
                         {/* Campo PAGO EM PIX */}
                         {pixPayment && (
                           <div className="form-group">
@@ -900,12 +897,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                             <span>R$ {noPaid.toFixed(2)}</span>
                           </div>
                         )}
-                        {changeDue > 0 && (
-                          <div className="form-group read-only-group" style={{ color: 'green', fontWeight: 'bold' }}>
-                            <label>Troco:</label>
-                            <span>R$ {changeDue.toFixed(2)}</span>
-                          </div>
-                        )}
+
 
                         {/* Navegação */}
                         <div className="modal-navigation">
