@@ -13,7 +13,7 @@
     --active-text-color: #fff;
     --menu-width-mobile: 280px;
     --header-height-mobile: 50px;
-    --menu-height-desktop: 70px;
+    --menu-height-desktop: 85px;
     --spacing-sm: 8px;
     --spacing-md: 15px;
     --border-radius: 6px;
@@ -125,13 +125,7 @@ header {
 }
 
 /* --- Logo (Hidden by default, shown on desktop) --- */
-#logoTitle, #logoSlogan {
-    display: none; /* Hidden by default */
-    position: fixed;
-    color: var(--text-light);
-    z-index: 1001;
-    text-align: right;
-}
+
 
 /* --- Menu Overlay (Mobile) --- */
 #backgroundMenu {
@@ -296,6 +290,14 @@ header {
         bottom: calc(var(--menu-height-desktop) + 25px);
         right: var(--spacing-md);
         font-size: 1.5rem;
+        color: rgb(255, 255, 255);
+        position: fixed;
+        right: 55px;
+        bottom: 40px;
+        width: 200px;
+        text-align: right;
+        z-index: 2000;
+        
     }
 
     #logoSlogan {
@@ -303,6 +305,13 @@ header {
         bottom: calc(var(--menu-height-desktop) + 5px);
         right: var(--spacing-md);
         font-size: 0.7rem;
+        color: rgb(255, 255, 255);
+        position: fixed;
+        right: 55px;
+        bottom: 0px;
+        width: 200px;
+        text-align: right;
+        z-index: 2000;
     }
 }
 

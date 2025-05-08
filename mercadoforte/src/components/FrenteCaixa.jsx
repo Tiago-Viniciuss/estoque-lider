@@ -586,7 +586,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
       return;
     }
 
-    
+
 
     setLoading(true);
     try {
@@ -699,19 +699,39 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
             <button onClick={handleLogout} className="btn-logout-cashier" title="Sair do Caixa">Sair</button>
           </div>
           <div className="shopping-list-container">
-
-            <ul className="shopping-list">
-              {shoppingList.map((product, index) => (
-                <li key={index}>
-                  <span>{product.nome} - {product.quantity} {product.quantity === 1 ? 'unidade' : 'unidades'}</span>
-                  <span>R$ {(parseFloat(product.preco || 0) * product.quantity).toFixed(2)}</span>
-                  <button onClick={() => removeFromShoppingList(index)} className="remove-item-btn" disabled={saveShoppingContainer}>×</button>
-                </li>
-              ))}
-              <div ref={endOfListRef} />
-            </ul>
-
+            <table>
+              <thead>
+                <tr>
+                  <th>Produtos</th>
+                  <th>Preço</th>
+                  <th>Quantidade</th>
+                  <th>Subtotal</th>
+                  <th></th> {/* Para o botão de remover */}
+                </tr>
+              </thead>
+              <tbody>
+                {shoppingList.map((product, index) => (
+                  <tr key={index}>
+                    <td>{product.nome}</td>
+                    <td>R$ {(parseFloat(product.preco || 0)).toFixed(2)}</td>
+                    <td>{product.quantity} {product.quantity === 1 ? 'unidade' : 'unidades'}</td>
+                    <td><strong>R$ {(parseFloat(product.preco || 0) * product.quantity).toFixed(2)}</strong></td>
+                    <td>
+                      <button
+                        onClick={() => removeFromShoppingList(index)}
+                        className="remove-item-btn"
+                        disabled={saveShoppingContainer}
+                      >
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div ref={endOfListRef} />
           </div>
+
 
           {/* Área de Busca e Lista de Compras (sem alterações visuais aqui) */}
           <section id='searchPaymentContainer'>
@@ -752,11 +772,11 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
               <div className="controls">
                 <div className="control-group">
                   <label>Desconto (%):</label>
-                  <input type="number" min="0"  onChange={applyDiscount} disabled={saveShoppingContainer} />
+                  <input type="number" min="0" onChange={applyDiscount} disabled={saveShoppingContainer} />
                 </div>
                 <div className="control-group">
                   <label>Desconto (R$):</label>
-                  <input type="number" min="0"  onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)} disabled={saveShoppingContainer} />
+                  <input type="number" min="0" onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)} disabled={saveShoppingContainer} />
                 </div>
                 <div className="control-group">
                   <label>Acréscimo (R$):</label>
