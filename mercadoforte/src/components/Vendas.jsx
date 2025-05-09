@@ -500,7 +500,7 @@ const Vendas = ({ onTotalChange }) => {
             </section>
 
             <section id='summaryAndKpisSection'>
-                 <h2>Resumo e KPIs: {currentPeriodDescription}</h2>
+                 <h2>Resumo: {currentPeriodDescription}</h2>
                  <div id='kpisSection' style={{ marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px solid #eee' }}>
                      <h3>Indicadores Chave (KPIs)</h3>
                      <p><strong>Nº Vendas:</strong> {filteredSales.length}</p>
@@ -538,7 +538,7 @@ const Vendas = ({ onTotalChange }) => {
                          <p><strong>Recebido (Pix):</strong> R$ {totalPagamentosPix.toFixed(2).replace('.', ',')}</p>
                      </div>
                  </div>
-                 <div id='totalCaixa' style={{ marginTop: '20px', paddingTop: '15px', borderTop: '2px solid #666', textAlign: 'center' }}>
+                 <div id='totalCaixa' style={{ marginTop: '20px', paddingTop: '15px', borderTop: '2px solid #666', textAlign: 'center', fontSize: '1.2em' }}>
                     <h3 style={{ marginBottom: '10px' }}>Total em Caixa no Período</h3>
                     <p style={{ fontSize: '1.4em', fontWeight: 'bold', color: '#27ae60' }}>
                         R$ {totalEmCaixa.toFixed(2).replace('.', ',')}
@@ -582,6 +582,7 @@ const Vendas = ({ onTotalChange }) => {
                             <span><strong>Valor: </strong>R${(Number(pagamento.valor) || 0).toFixed(2)}</span>
                             <span><strong>Data: </strong>{pagamento.data?.seconds ? new Date(pagamento.data.seconds * 1000).toLocaleString('pt-BR') : 'Data inválida'}</span>
                             <span><strong>FP: </strong>{pagamento.formaPagamento || 'N/A'}</span>
+                            <span><strong>ID: </strong>{pagamento.id || 'N/A'}</span>
                         </li>
                     ))}
                 </ul>
@@ -606,15 +607,17 @@ const Vendas = ({ onTotalChange }) => {
                         <p><strong>Pago em Pix:</strong> R$ {(selectedSale.PagoPix || 0).toFixed(2)}</p>
                         <p><strong>Fiado:</strong> R$ {(selectedSale.Fiado || 0).toFixed(2)}</p>
                         <p><strong>Forma Pagamento Predominante:</strong> {selectedSale.FormaPagamento || 'N/A'}</p>
-                        <h3>Itens:</h3>
                         <ul>
+                            <strong><h3>Itens da Venda:</h3></strong>
                             {(selectedSale.Lista || []).map((item, index) => (
-                                <li key={index}>{item.quantity}x {item.nome} - R$ {(item.preco || 0).toFixed(2)}</li>
+                                <strong>
+                                    <li key={index}>{item.quantity}x {item.nome} - <i>R$ {(item.preco || 0).toFixed(2)}</i></li>
+                                </strong>
                             ))}
                         </ul>
                         <div className='modalActions'>
                             {/* Botão chama a função implementada agora */}
-                            <button onClick={exportSalePDF} className='btn btn-secondary'>Exportar PDF Venda</button> 
+                            <button onClick={exportSalePDF} className='btn btn-primary'>Exportar PDF Venda</button> 
                             <button onClick={handleDeleteSale} className='btn btn-danger'>Excluir Venda</button>
                         </div>
                     </div>

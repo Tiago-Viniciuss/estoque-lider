@@ -4,7 +4,7 @@
     --secondary-color: #6c757d;
     --success-color: #28a745;
     --danger-color: #dc3545;
-    --info-color: #17a2b8; /* Azul info para botões como pagar */
+    --info-color: #101111; /* Azul info para botões como pagar */
     --light-bg: #f8f9fa;
     --dark-text: #343a40;
     --light-text: #f8f9fa;
@@ -55,6 +55,16 @@
     width: auto; /* Remove largura fixa */
 }
 
+#generatePDF {
+    position: fixed;
+    bottom: 130px;
+    right: 25px;
+}
+
+#generatePDF:hover {
+    background-color: #9fa0a1;
+}
+
 /* --- Lista de Clientes (Mobile First - Cards) --- */
 #clientsListContainer { /* Adicionar uma div container para a lista no JSX */
     display: flex;
@@ -102,6 +112,11 @@
     color: var(--success-color);
 }
 
+.actions {
+    display: flex;
+    gap: 10px;
+}
+
 .client-card .actions {
     display: flex;
     gap: 10px;
@@ -125,11 +140,12 @@
 }
 
 .btn-info {
-    background-color: var(--info-color);
+    background-color: black;
     color: white;
 }
+
 .btn-info:hover {
-    background-color: #138496;
+    background-color: #152b2e;
 }
 
 .btn-warning {
@@ -165,12 +181,12 @@
 /* --- Botão Flutuante (FAB) --- */
 #addClient {
     position: fixed;
-    bottom: 30px;
+    bottom: 40px;
     right: 20px;
-    width: 60px;
-    height: 60px;
+    width: 75px;
+    height: 75px;
     border-radius: 50%;
-    background-color: var(--primary-color);
+    background-color: var(--dark-text);
     color: white;
     border: none;
     font-size: 2em;
@@ -184,7 +200,7 @@
 }
 
 #addClient:hover {
-    background-color: #0056b3;
+    background-color: #555;
 }
 
 /* --- Modais --- */
@@ -273,20 +289,28 @@
 }
 
 /* Específicos dos Modais */
+
+#paymentBody {
+    background-color: #fff;
+    border-radius: 10px;
+}
+
 #paymentBody p {
     margin-bottom: 15px;
     font-size: 1.1em;
     text-align: center;
 }
-#paymentBody strong {
-    color: var(--primary-color);
+
+.debtColor {
+    color: var(--danger-color);
 }
 
 #addClientForm, #editClientForm { /* Usar IDs ou classes consistentes */
     display: flex;
     flex-direction: column;
+    background-color: #fff;
+    border-radius: 10px;
 }
-
 /* --- Media Queries --- */
 
 /* Tablet */

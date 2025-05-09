@@ -55,7 +55,7 @@ const UserModal = ({ user, onClose, onSave, empresaId }) => {
               id="userName"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              required
+              required className='form-control'
             />
           </div>
           <div className="form-group">
@@ -65,7 +65,7 @@ const UserModal = ({ user, onClose, onSave, empresaId }) => {
               id="userEmail"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
+              required className='form-control'
             />
           </div>
           {!user && (
@@ -76,7 +76,7 @@ const UserModal = ({ user, onClose, onSave, empresaId }) => {
                 id="userPassword"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
+                required className='form-control'
               />
             </div>
           )}
@@ -405,7 +405,7 @@ const Configuracoes = () => {
         />
       )}
 
-      {/* --- Seção Outras Configurações --- */}
+      {/* --- Seção Outras Configurações ---
       <section className="config-section other-settings-section">
         <h3>Outras Configurações</h3>
          <form onSubmit={handleSaveSettingsChanges} className="config-form">
@@ -456,7 +456,8 @@ const Configuracoes = () => {
                 </button>
             )}
         </form>
-      </section>
+      </section> */}
+      
 
       {/* --- Botão de Sair --- */}
       <section className="config-section logout-section">

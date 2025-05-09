@@ -706,7 +706,6 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                   <th>Preço</th>
                   <th>Quantidade</th>
                   <th>Subtotal</th>
-                  <th></th> {/* Para o botão de remover */}
                 </tr>
               </thead>
               <tbody>
@@ -771,16 +770,22 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
               </div>
               <div className="controls">
                 <div className="control-group">
-                  <label>Desconto (%):</label>
-                  <input type="number" min="0" onChange={applyDiscount} disabled={saveShoppingContainer} />
+                  <div>
+                    <label>Desconto (%):</label>
+                    <input type="number" min="0" onChange={applyDiscount} disabled={saveShoppingContainer} />
+                  </div>
                 </div>
                 <div className="control-group">
-                  <label>Desconto (R$):</label>
-                  <input type="number" min="0" onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)} disabled={saveShoppingContainer} />
+                  <div>
+                    <label>Desconto (R$):</label>
+                    <input type="number" min="0" onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)} disabled={saveShoppingContainer} />
+                  </div>
                 </div>
                 <div className="control-group">
-                  <label>Acréscimo (R$):</label>
-                  <input type="number" min="0" onChange={(e) => setExtraAmount(parseFloat(e.target.value) || 0)} disabled={saveShoppingContainer} />
+                  <div>
+                    <label>Acréscimo (R$):</label>
+                    <input type="number" min="0" onChange={(e) => setExtraAmount(parseFloat(e.target.value) || 0)} disabled={saveShoppingContainer} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -828,7 +833,14 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                           />
                         </div>
                         <div className="modal-navigation">
-                          <button type="button" onClick={showPaymentMethod} className="btn-next">Avançar</button>
+                          <button
+                            type="button"
+                            onClick={showPaymentMethod}
+                            className="btn-next"
+                            disabled={!clientName.trim() || !clientPhone.trim()}
+                          >
+                            Avançar
+                          </button>
                         </div>
                       </div>
                     )}
@@ -848,7 +860,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                         </div>
                         <div className="modal-navigation">
                           <button type="button" onClick={backPaymentMethod} className="btn-back">Voltar</button>
-                          <button type="button" onClick={showPaymentAmount} className="btn-next">Avançar</button>
+                          <button type="button" onClick={showPaymentAmount} className="btn-next" disabled={!paymentMethod.trim()}>Avançar</button>
                         </div>
                       </div>
                     )}
@@ -868,7 +880,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                               id="paidCash"
                               value={paid}
                               onChange={(e) => handlePaymentChange(e, setPaid)}
-                              placeholder="0.00"
+                              placeholder="0.00" required
                             />
                           </div>
                         )}
@@ -905,7 +917,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                               id="paidPix"
                               value={pixPaid}
                               onChange={(e) => handlePaymentChange(e, setPixPaid)}
-                              placeholder="0.00"
+                              placeholder="0.00" required
                             />
                           </div>
                         )}

@@ -34,7 +34,7 @@
     color: #666;
   }
   
-  .login-modal-content .form-group {
+  .login-modal-content.form-group {
     margin-bottom: 20px;
     text-align: left;
   }

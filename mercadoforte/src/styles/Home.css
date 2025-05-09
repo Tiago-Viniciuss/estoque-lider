@@ -107,6 +107,7 @@ header {
     gap: var(--spacing-sm);
     z-index: 1002; /* Above header */
     font-size: 0.9rem;
+    
 }
 
 #logoutButton {
@@ -210,6 +211,15 @@ header {
 /* --- Main Content Area --- */
 #main-content {
     padding: var(--spacing-md);
+}
+
+
+#logoTitle {
+    display: none;
+}
+
+#logoSlogan {
+    display: none;
 }
 
 /* === Desktop Styles (min-width: 768px) === */

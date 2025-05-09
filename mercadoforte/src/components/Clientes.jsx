@@ -303,7 +303,7 @@ const Clientes = () => {
                     placeholder="Digite o nome do cliente"
                     className="form-control"
                 />
-                 <button onClick={gerarPDF} className="btn btn-secondary btn-sm" title="Gerar PDF da Lista Filtrada">
+                 <button onClick={gerarPDF} className="btn btn-secondary btn-sm" id='generatePDF' title="Gerar PDF da Lista Filtrada">
                     <span className="material-symbols-outlined">picture_as_pdf</span> PDF
                 </button>
             </div>
@@ -338,7 +338,7 @@ const Clientes = () => {
                                 <td className="actions">
                                     {client.divida > 0 && (
                                         <button
-                                            className="btn btn-info btn-sm"
+                                            className="btn btn-dark btn-sm"
                                             onClick={() => openPaymentModal(client)}
                                             title='Pagar Dívida'
                                         >
@@ -346,7 +346,7 @@ const Clientes = () => {
                                         </button>
                                     )}
                                     <button
-                                        className="btn btn-warning btn-sm"
+                                        className="btn btn-light btn-sm"
                                         onClick={() => openEditingModal(client)}
                                         title='Editar Cliente'
                                     >
@@ -395,14 +395,14 @@ const Clientes = () => {
                         <div className="actions">
                             {client.divida > 0 && (
                                 <button
-                                    className="btn btn-info btn-sm"
+                                    className="btn btn-dark btn-sm"
                                     onClick={() => openPaymentModal(client)}
                                 >
                                     <span className='material-symbols-outlined'>attach_money</span> Pagar
                                 </button>
                             )}
                              <button
-                                className="btn btn-warning btn-sm"
+                                className="btn btn-light btn-sm"
                                 onClick={() => openEditingModal(client)}
                             >
                                 <span className='material-symbols-outlined'>edit</span> Editar
@@ -512,7 +512,7 @@ const Clientes = () => {
                         <button type="button" id="closePaymentButton" className="material-symbols-outlined" onClick={() => setShowPaymentModal(false)}>close</button>
                         <h2>Pagar Dívida</h2>
                         <p>Cliente: <strong>{selectedClient.nome}</strong></p>
-                        <p>Dívida Atual: <strong>R$ {selectedClient.divida.toFixed(2)}</strong></p>
+                        <p>Dívida Atual: <strong className='debtColor'>R$ {selectedClient.divida.toFixed(2)}</strong></p>
 
                         <label htmlFor="paymentValue">Valor do Pagamento:</label>
                         <input

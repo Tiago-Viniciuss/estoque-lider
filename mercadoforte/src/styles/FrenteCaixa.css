@@ -162,7 +162,7 @@ body {
     /* Takes available space */
     overflow-y: auto;
     /* Scroll if needed */
-    max-height: 150px;
+    max-height: 200px;
     /* Limit height on mobile */
 }
 
@@ -231,26 +231,31 @@ body {
     display: flex;
     flex-direction: column;
     gap: 15px;
-    height: 330px;
+    height: 250px;
 }
 
 .controls {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    /* Responsive grid */
+    display: flex;
+    flex-direction: row;
     gap: 10px;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
 }
 
 .control-group label {
     display: block;
-    font-size: 12px;
+    font-size: 10px;
     margin-bottom: 3px;
     color: var(--secondary-color);
 }
 
 .control-group input {
-    width: 100%;
-    height: 25px;
+    width: 50px;
+    height: 20px;
     padding: 8px 10px;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
@@ -338,8 +343,8 @@ body {
 
 .close-modal-btn {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: -15px;
+    right: -20px;
     background: none;
     border: none;
     font-size: 1.6em;
@@ -418,7 +423,7 @@ body {
 }
 
 .client-suggestions li:hover {
-    background-color: var(--primary-color);
+    background-color: var(--secondary-color);
     color: white;
 }
 
@@ -442,12 +447,12 @@ body {
 }
 
 .btn-next {
-    background-color: var(--primary-color);
+    background-color: var(--dark-text);
     color: white;
 }
 
 .btn-next:hover:not(:disabled) {
-    background-color: #0056b3;
+    background-color: #555;
 }
 
 .btn-next:disabled {
@@ -456,7 +461,7 @@ body {
 }
 
 .btn-back {
-    background-color: var(--secondary-color);
+    background-color: var(--danger-color);
     color: white;
 }
 
@@ -478,9 +483,6 @@ body {
     cursor: not-allowed;
 }
 
-
-#insertedValueCash {
-}
 
 #changeValue {
     margin: 0px;
@@ -587,6 +589,36 @@ body {
     #searchPaymentContainer {
         margin-top: 40px;
         width: 500px;
+    }
+
+    .control-group label {
+        display: block;
+        font-size: 12px;
+        margin-bottom: 3px;
+        color: var(--secondary-color);
+    }
+    
+    .control-group input {
+        width: 50px;
+        height: 30px;
+        padding: 8px 10px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        font-size: 14px;
+    }
+
+    
+    .modal-content.save-shopping-content {
+        background-color: white;
+        padding: 25px;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-md);
+        max-width: 600px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        overflow-x: hidden;
     }
 
 
