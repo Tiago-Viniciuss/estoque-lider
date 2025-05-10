@@ -93,14 +93,15 @@ export const Home = () => {
     <div id="home">
       <h1 id="logoTitle">
         <span id='logoImg'></span>
-        Mercado Forte
+        Estoque Líder®
       </h1>
       <header>
         {/* Botão de menu só aparece em mobile (controlado via CSS) */}
         <button className='material-symbols-outlined' id='openMenu' onClick={openMenu}>menu</button>
         <h1 id='companyTitle' className={scrolled ? 'scrolled' : ''}>
-            <span className="companyName">Mercado Forte</span>
-            <img src='/images/cart2.png' alt="logo" id='logoImg' />
+            <span className="companyName">Estoque Líder 
+            </span>
+            <img src='/images/logoEstoqueLider.png' alt="logo" id='logoImg' />
           </h1>
       </header>
       {/* Nome da Empresa (Removido daqui, pode ser exibido dentro de Configurações ou em outro local) */}

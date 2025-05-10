@@ -7,11 +7,11 @@ export default defineConfig({
     react(),
     VitePWA({
       manifest: {
-        short_name: "Mercado Forte®", // Nome do seu novo projeto
-        name: "Mercado Forte®", // Nome completo do projeto
+        short_name: "Estoque Líder App®", // Nome do seu novo projeto
+        name: "Estoque Líder® App", // Nome completo do projeto
         icons: [
           {
-            src: "/images/cart2.png", // Substitua pelo caminho do ícone do seu projeto
+            src: "/images/logoEstoqueLider.png", // Substitua pelo caminho do ícone do seu projeto
             sizes: "192x192",
             type: "image/png"
           }
