@@ -81,17 +81,18 @@
 /* === Tabela de Produtos === */
 .products-list-section {/* Permite rolagem horizontal em telas pequenas */
     background-color: var(--background-white);
-    border-radius: var(--border-radius);
     box-shadow: var(--shadow-sm);
     width: 100%;
-    background-color: var(--background-light)
+    background-color: var(--background-light);
+    display: flex;
+    justify-content: center;
 }
 
 .products-table {
     width: 100%;
     font-size: var(--font-size-sm);
     text-align: left;
-    background-color: var(--background-light)
+    background-color: var(--background-light);
 }
 
 .products-table th,

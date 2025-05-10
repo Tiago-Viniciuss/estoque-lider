@@ -519,11 +519,13 @@ body {
         padding: 12px 16px;
         text-align: left;
         border-bottom: 1px solid #ddd;
+        font-size: 13px;
       }
       
       .shopping-list-container th {
-        background-color: #f4f4f4;
         font-weight: bold;
+        background-color: #0050BC;
+        color: white;
       }
       
       .shopping-list-container tr:hover {

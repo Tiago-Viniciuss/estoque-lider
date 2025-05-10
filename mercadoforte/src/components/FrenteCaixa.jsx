@@ -131,7 +131,21 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   const [cashPayment, setCashPayment] = useState(false)
   const [pixPayment, setPixPayment] = useState(false)
   const [showLoginModal, setShowLoginModal] = useState(true);
+  const [isOnline, setIsOnline] = useState(navigator.onLine); // Estado para status online
+// Efeito para monitorar status online/offline
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
 
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    // Limpeza ao desmontar o componente
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []); // Executa apenas uma vez ao montar
   // <<< Proteção contra recarregamento acidental >>>
   useEffect(() => {
     const handleBeforeUnload = (event) => {
@@ -695,6 +709,12 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
       {!showLoginModal && activeUser && (
         <>
           <div className="cashier-header">
+            {/* Indicador de Status Online/Offline */}
+            <div
+              id="online-status-indicator"
+              className={isOnline ? "online" : "offline"}
+              title={isOnline ? "Online" : "Offline"}
+            ></div>
             <span>Operador: <strong>{activeUser}</strong></span>
             <button onClick={handleLogout} className="btn-logout-cashier" title="Sair do Caixa">Sair</button>
           </div>
@@ -706,6 +726,7 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                   <th>Preço</th>
                   <th>Quantidade</th>
                   <th>Subtotal</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>

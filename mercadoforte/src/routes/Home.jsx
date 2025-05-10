@@ -9,6 +9,7 @@ import Clientes from '../components/Clientes';
 import Balanço from '../components/Balanço';
 import EntradaDeNotas from '../components/EntradaDeNotas';
 import Configuracoes from '../components/Configuracoes'; // Importar o componente Configuracoes
+
 import '../styles/Home.css'; // Manter o CSS original por enquanto, será otimizado depois
 import { useNavigate } from 'react-router-dom'; // Importar useNavigate
 
@@ -29,24 +30,9 @@ export const Home = () => {
   const [shoppingList, setShoppingList] = useState([]);
   const [companyName, setCompanyName] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false); // Controlar estado do menu
-  const [isOnline, setIsOnline] = useState(navigator.onLine); // Estado para status online
   const empresaId = localStorage.getItem("empresaId");
   const navigate = useNavigate(); // Hook para navegação
-
-  // Efeito para monitorar status online/offline
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    // Limpeza ao desmontar o componente
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []); // Executa apenas uma vez ao montar
+  const [scrolled, setScrolled] = useState(false)
 
   const openMenu = () => {
     setIsMenuOpen(true);
@@ -86,15 +72,25 @@ export const Home = () => {
     closeMenu(); // Fecha o menu ao selecionar um item
   };
 
+  
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 50) {
+        setScrolled(true)
+      } else {
+        setScrolled(false)
+      }
+    }
+
+    
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   return (
     <div id="home">
-      {/* Indicador de Status Online/Offline */}
-      <div
-        id="online-status-indicator"
-        className={isOnline ? "online" : "offline"}
-        title={isOnline ? "Online" : "Offline"}
-      ></div>
-
       <h1 id="logoTitle">
         <span id='logoImg'></span>
         Mercado Forte
@@ -102,6 +98,10 @@ export const Home = () => {
       <header>
         {/* Botão de menu só aparece em mobile (controlado via CSS) */}
         <button className='material-symbols-outlined' id='openMenu' onClick={openMenu}>menu</button>
+        <h1 id='companyTitle' className={scrolled ? 'scrolled' : ''}>
+            <span className="companyName">Mercado Forte</span>
+            <img src='/images/cart2.png' alt="logo" id='logoImg' />
+          </h1>
       </header>
       {/* Nome da Empresa (Removido daqui, pode ser exibido dentro de Configurações ou em outro local) */}
       {/* 

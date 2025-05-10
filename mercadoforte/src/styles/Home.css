@@ -46,12 +46,13 @@ header {
     box-sizing: border-box;
     z-index: 1001; /* Above menu overlay */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: white;
 }
 
 #openMenu {
     background: none;
     border: none;
-    color: var(--text-light);
+    color: var(--text-dark);
     font-size: 28px; /* Larger icon */
     cursor: pointer;
     padding: 0;
@@ -60,9 +61,6 @@ header {
 
 /* --- Online Status Indicator --- */
 #online-status-indicator {
-    position: fixed;
-    top: calc(var(--spacing-sm) + 2px); /* Align with header content */
-    right: var(--spacing-md);
     width: 12px;
     height: 12px;
     border-radius: 50%;
@@ -155,7 +153,7 @@ header {
     top: 0;
     height: 100vh;
     width: var(--menu-width-mobile);
-    background-color: var(--secondary-color);
+    background-color: #0050BC;
     padding: var(--spacing-lg) 0;
     box-sizing: border-box;
     display: flex;
@@ -195,11 +193,11 @@ header {
 }
 
 .menu-item:hover {
-    background-color: var(--hover-bg-color);
+    background-color:#013578;
 }
 
 .menu-item.active {
-    background-color: var(--active-bg-color);
+    background-color: #013578;
     color: var(--active-text-color);
     font-weight: 500;
 }
@@ -221,6 +219,38 @@ header {
 #logoSlogan {
     display: none;
 }
+
+#companyTitle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 24px;
+    transition: all 0.5s ease;
+    position: fixed;
+    top: 5px;
+    right: 30px;
+    z-index: 10;
+    padding-right: 5px;
+  }
+  
+  #companyTitle .companyName {
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    color: #0050BC;
+  }
+  
+  #logoImg {
+    height: 40px;
+    transition: transform 0.5s ease;
+  }
+
+#companyTitle.scrolled .companyName {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  
+  #companyTitle.scrolled #logoImg {
+    transform: translateX(30px);
+  }
 
 /* === Desktop Styles (min-width: 768px) === */
 @media screen and (min-width: 768px) {
@@ -265,7 +295,7 @@ header {
         left: 0;
         width: 100%;
         height: var(--menu-height-desktop);
-        background-color: var(--secondary-color);
+        background-color: #0050BC;
         flex-direction: row;
         justify-content: center; /* Center items */
         align-items: center;
@@ -287,11 +317,34 @@ header {
         font-size: 0.75rem; /* Smaller font */
         height: 100%;
         justify-content: center;
+        color: white;
+    }
+
+    .menu-item:hover {
+        background-color: white;
+        color: var(--text-dark);
+    }
+
+    .menu-item:hover .menu-icon {
+        color: var(--text-dark);
+    }
+
+    .menu-item.active {
+        background-color: white;
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    .menu-item.active .menu-icon {
+        background-color: white;
+        color: var(--text-dark);
+        font-weight: 500;
     }
 
     .menu-item .menu-icon {
         font-size: 24px; /* Slightly larger icon */
         margin-bottom: 2px;
+        color: white;
     }
 
     /* --- Logo (Desktop) --- */
@@ -300,7 +353,7 @@ header {
         bottom: calc(var(--menu-height-desktop) + 25px);
         right: var(--spacing-md);
         font-size: 1.5rem;
-        color: rgb(255, 255, 255);
+        color: white;
         position: fixed;
         right: 55px;
         bottom: 40px;
@@ -315,7 +368,7 @@ header {
         bottom: calc(var(--menu-height-desktop) + 5px);
         right: var(--spacing-md);
         font-size: 0.7rem;
-        color: rgb(255, 255, 255);
+        color: white;
         position: fixed;
         right: 55px;
         bottom: 0px;
