@@ -376,9 +376,15 @@
     }
 
     #addClient {
-        bottom: 40px;
+        bottom: 100px;
         right: 30px;
     }
+
+    #generatePDF {
+    position: fixed;
+    bottom: 200px;
+    right: 35px;
+}
 }
 
 /* Desktop */
