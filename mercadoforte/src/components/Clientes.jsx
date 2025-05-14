@@ -23,6 +23,9 @@ const Clientes = () => {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const empresaId = localStorage.getItem('empresaId');
     const [paymentMethod, setPaymentMethod] = useState("");
+    const [cardPaymentTypeFiado, setCardPaymentTypeFiado] = useState(''); // 'debito' ou 'credito'
+    const [installmentsFiado, setInstallmentsFiado] = useState(1);
+    const [showCardOptionsFiado, setShowCardOptionsFiado] = useState(false);
 
     // Função para abrir modal de edição
     const openEditingModal = (client) => {
@@ -34,8 +37,11 @@ const Clientes = () => {
     // Função para abrir modal de pagamento
     const openPaymentModal = (client) => {
         setSelectedClient(client);
-        setPayment(''); // Limpa valor do pagamento anterior
-        setPaymentMethod(''); // Limpa método de pagamento anterior
+        setPayment(""); // Limpa valor do pagamento anterior
+        setPaymentMethod(""); // Limpa método de pagamento anterior
+        setCardPaymentTypeFiado(""); // Resetar tipo de cartão
+        setInstallmentsFiado(1); // Resetar parcelas
+        setShowCardOptionsFiado(false); // Esconder opções de cartão
         setShowPaymentModal(true);
     }
 
@@ -186,6 +192,7 @@ const Clientes = () => {
     const handlePayment = async (e) => {
         e.preventDefault();
         const paymentValue = parseFloat(payment);
+
         if (!selectedClient || !selectedClient.id || !paymentValue || paymentValue <= 0 || !paymentMethod) {
             alert("Selecione o cliente, insira um valor válido e escolha a forma de pagamento.");
             return;
@@ -193,6 +200,16 @@ const Clientes = () => {
         if (paymentValue > selectedClient.divida) {
             alert("O valor do pagamento não pode ser maior que a dívida atual.");
             return;
+        }
+
+        // Validação para pagamento com cartão
+        if (paymentMethod === "Cartão") {
+            if (!cardPaymentTypeFiado) {
+                alert("Por favor, selecione o tipo de cartão (Débito ou Crédito).");
+                return;
+            }
+            // Validação de parcelas não é estritamente necessária aqui se o select sempre tem um valor padrão > 0
+            // mas pode ser adicionada se houver chance de installmentsFiado ser inválido.
         }
 
         setLoading(true);
@@ -206,20 +223,32 @@ const Clientes = () => {
             });
 
             const pagamentosRef = collection(db, `Empresas/${empresaId}/Pagamentos`);
-            await addDoc(pagamentosRef, {
+            const pagamentoData = {
                 clienteId: selectedClient.id,
                 clienteNome: selectedClient.nome,
                 valor: paymentValue,
                 data: Timestamp.now(),
-                tipo: "Fiado",
+                tipo: "Fiado", // Indica que é um pagamento de uma dívida de fiado
                 formaPagamento: paymentMethod
-            });
+            };
+
+            if (paymentMethod === "Cartão") {
+                pagamentoData.tipoCartao = cardPaymentTypeFiado;
+                if (cardPaymentTypeFiado === "credito") {
+                    pagamentoData.parcelasCartao = installmentsFiado;
+                }
+            }
+
+            await addDoc(pagamentosRef, pagamentoData);
 
             alert(`Pagamento de R$ ${paymentValue.toFixed(2)} realizado! Nova dívida: R$ ${newDebt.toFixed(2)}`);
             setShowPaymentModal(false);
             setSelectedClient(null);
-            setPayment('');
-            setPaymentMethod('');
+            setPayment("");
+            setPaymentMethod("");
+            setCardPaymentTypeFiado("");
+            setInstallmentsFiado(1);
+            setShowCardOptionsFiado(false);
         } catch (error) {
             console.error("Erro ao processar pagamento:", error);
             alert("Erro ao processar pagamento.");
@@ -526,18 +555,76 @@ const Clientes = () => {
                             placeholder="0.00"
                             required
                         />
-                         <label htmlFor="paymentMethodSelect">Forma de Pagamento:</label>
-                         <select 
-                            id="paymentMethodSelect" 
-                            value={paymentMethod} 
-                            onChange={(e) => setPaymentMethod(e.target.value)}
+                        <label htmlFor="paymentMethodSelect">Forma de Pagamento:</label>
+                        <select
+                            id="paymentMethodSelect"
+                            value={paymentMethod}
+                            onChange={(e) => {
+                                setPaymentMethod(e.target.value);
+                                if (e.target.value === "Cartão") {
+                                    setShowCardOptionsFiado(true);
+                                } else {
+                                    setShowCardOptionsFiado(false);
+                                    setCardPaymentTypeFiado("");
+                                    setInstallmentsFiado(1);
+                                }
+                            }}
                             required
-                         >
-                            <option value="" disabled>-- Selecione --</option>
+                        >
+                            <option value="" disabled>Selecione...</option>
                             <option value="Dinheiro">Dinheiro</option>
                             <option value="Pix">Pix</option>
-                            {/* Adicionar outras formas se necessário */}
-                         </select>
+                            <option value="Cartão">Cartão</option>
+                        </select>
+
+                        {showCardOptionsFiado && paymentMethod === "Cartão" && (
+                            <>
+                                <div className="form-group">
+                                    <label>Tipo de Cartão:</label>
+                                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                                        <label style={{ marginRight: '15px' }}>
+                                            <input
+                                                type="radio"
+                                                name="cardPaymentTypeFiado"
+                                                value="debito"
+                                                checked={cardPaymentTypeFiado === "debito"}
+                                                onChange={(e) => {
+                                                    setCardPaymentTypeFiado(e.target.value);
+                                                    setInstallmentsFiado(1); // Reset installments if switching to debit
+                                                }}
+                                                required
+                                            /> Débito
+                                        </label>
+                                        <label>
+                                            <input
+                                                type="radio"
+                                                name="cardPaymentTypeFiado"
+                                                value="credito"
+                                                checked={cardPaymentTypeFiado === "credito"}
+                                                onChange={(e) => setCardPaymentTypeFiado(e.target.value)}
+                                                required
+                                            /> Crédito
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {cardPaymentTypeFiado === "credito" && (
+                                    <div className="form-group">
+                                        <label htmlFor="installmentsFiado">Número de Parcelas:</label>
+                                        <select
+                                            id="installmentsFiado"
+                                            value={installmentsFiado}
+                                            onChange={(e) => setInstallmentsFiado(parseInt(e.target.value))}
+                                            required
+                                        >
+                                            {[...Array(12).keys()].map(i => (
+                                                <option key={i + 1} value={i + 1}>{i + 1}x</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+                            </>
+                        )}
 
                         <div className="modal-actions">
                             <button id="confirmPayment" type="submit" className="btn btn-success" disabled={loading || !payment || !paymentMethod || parseFloat(payment) <= 0 || parseFloat(payment) > selectedClient.divida}>

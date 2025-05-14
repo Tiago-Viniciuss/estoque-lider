@@ -68,9 +68,11 @@ const Login = () => {
                 {loginError && <p className='error-message'>*Usuário ou senha inválido</p>}
                 <button className='btn btn-dark form-control' type='submit'>Entrar</button>
                 
-                <Link to={'/criar-conta'}>Não tem uma conta? Crie agora</Link>
+               {/*
+               <Link to={'/criar-conta'}>Não tem uma conta? Crie agora</Link>
+               */} 
+               <p className='forgetPassword'>Esqueceu sua senha? Contacte o suporte</p>
             </form>
-            
         </main>
     );
 };

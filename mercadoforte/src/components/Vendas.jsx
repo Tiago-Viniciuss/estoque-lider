@@ -93,7 +93,7 @@ const getDateRange = (filter) => {
 
     const startTimestamp = startDate ? Timestamp.fromDate(startDate) : null;
     const endTimestamp = endDate ? Timestamp.fromDate(endDate) : null;
-  
+
     const periodDescription = () => {
         if (filter.type === 'today') return `Hoje (${now.toLocaleDateString('pt-BR')})`;
         if (filter.type === 'yesterday') {
@@ -137,8 +137,10 @@ const Vendas = ({ onTotalChange }) => {
     const [totalFiadoValue, setTotalFiadoValue] = useState(0);
     const [totalSalesDinheiro, setTotalSalesDinheiro] = useState(0);
     const [totalSalesPix, setTotalSalesPix] = useState(0);
+    const [totalSalesCartao, setTotalSalesCartao] = useState(0);
     const [totalPagamentosDinheiro, setTotalPagamentosDinheiro] = useState(0);
     const [totalPagamentosPix, setTotalPagamentosPix] = useState(0);
+    const [totalPagamentosCartao, setTotalPagamentosCartao] = useState(0);
     const [totalPagamentosGeral, setTotalPagamentosGeral] = useState(0);
     const [totalEmCaixa, setTotalEmCaixa] = useState(0);
 
@@ -146,6 +148,9 @@ const Vendas = ({ onTotalChange }) => {
     const [profitMargin, setProfitMargin] = useState(30);
     const [estimatedProfit, setEstimatedProfit] = useState(0);
     const [fiadoPercentage, setFiadoPercentage] = useState(0);
+    const [totalSalesCartaoDebito, setTotalSalesCartaoDebito] = useState(0);
+    const [totalSalesCartaoCredito, setTotalSalesCartaoCredito] = useState(0);
+    const [totalPagamentosCartaoDebito, setTotalPagamentosCartaoDebito] = useState(0); // Novo estado para pagamentos de fiado com cartão de débito
 
     // Paginação
     const [salesCurrentPage, setSalesCurrentPage] = useState(1);
@@ -202,16 +207,39 @@ const Vendas = ({ onTotalChange }) => {
     // Cálculo de totais e KPIs de Vendas
     useEffect(() => {
         const totalVendas = filteredSales.reduce((acc, sale) => acc + (sale.TotalVenda || 0), 0);
-        const totalFiado = filteredSales.reduce((acc, sale) => acc + (sale.Fiado || 0), 0);
-        const totalDinheiro = filteredSales.reduce((acc, sale) => acc + (parseFloat(sale.PagoDinheiro) || 0), 0);
-        const totalPix = filteredSales.reduce((acc, sale) => acc + (parseFloat(sale.PagoPix) || 0), 0);
+        let currentTotalFiadoTradicional = 0;
+        let currentTotalDinheiro = 0;
+        let currentTotalPix = 0;
+        let currentTotalSalesCartaoDebito = 0;
+        let currentTotalSalesCartaoCredito = 0;
+
+        for (const sale of filteredSales) {
+            currentTotalDinheiro += parseFloat(sale.PagoDinheiro) || 0;
+            currentTotalPix += parseFloat(sale.PagoPix) || 0;
+            currentTotalFiadoTradicional += parseFloat(sale.Fiado) || 0;
+
+            if (sale.TipoCartao === 'debito') {
+                currentTotalSalesCartaoDebito += parseFloat(sale.PagoCartao) || 0;
+            } else if (sale.TipoCartao === 'credito') {
+                currentTotalSalesCartaoCredito += parseFloat(sale.PagoCartao) || 0;
+            }
+        }
+
+        const novoTotalFiadoValue = currentTotalFiadoTradicional + currentTotalSalesCartaoCredito;
+
         setTotalSalesValue(totalVendas);
-        setTotalFiadoValue(totalFiado);
-        setTotalSalesDinheiro(totalDinheiro);
-        setTotalSalesPix(totalPix);
-        const percentage = totalVendas > 0 ? (totalFiado / totalVendas) * 100 : 0;
+        setTotalFiadoValue(novoTotalFiadoValue); // Fiado tradicional + Cartão de Crédito
+        setTotalSalesDinheiro(currentTotalDinheiro);
+        setTotalSalesPix(currentTotalPix);
+        setTotalSalesCartaoDebito(currentTotalSalesCartaoDebito); // Apenas Débito
+        setTotalSalesCartaoCredito(currentTotalSalesCartaoCredito); // Apenas Crédito (para informação, se necessário)
+        // O estado totalSalesCartao (geral) pode ser removido ou recalculado se ainda for necessário em outro lugar:
+        // setTotalSalesCartao(currentTotalSalesCartaoDebito + currentTotalSalesCartaoCredito);
+
+        const percentage = totalVendas > 0 ? (novoTotalFiadoValue / totalVendas) * 100 : 0;
         setFiadoPercentage(percentage);
-    }, [filteredSales]);
+
+    }, [filteredSales, setTotalSalesValue, setTotalFiadoValue, setTotalSalesDinheiro, setTotalSalesPix, setTotalSalesCartaoDebito, setTotalSalesCartaoCredito, setFiadoPercentage]);
 
     // Cálculo de totais de Pagamentos
     useEffect(() => {
@@ -222,20 +250,54 @@ const Vendas = ({ onTotalChange }) => {
         const totalDinheiroPg = allPagamentos
             .filter(p => p.formaPagamento?.toLowerCase() === "dinheiro")
             .reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
-        setTotalPagamentosGeral(totalGeral);
-        setTotalPagamentosPix(totalPixPg);
-        setTotalPagamentosDinheiro(totalDinheiroPg);
+        
+        // Total de pagamentos de fiado com cartão (geral: débito + crédito) - para fins informativos na seção pagamentosNumbers
+        const totalCartaoPgGeral = allPagamentos
+            .filter(p => p.formaPagamento && /cart[aã]o/i.test(p.formaPagamento))
+            .reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
+
+        // Total de pagamentos de fiado especificamente com cartão de DÉBITO - para o caixa
+        const totalCartaoDebitoPg = allPagamentos
+            .filter(p => 
+                p.formaPagamento && 
+                /cart[aã]o/i.test(p.formaPagamento) && 
+                p.tipoCartao?.toLowerCase() === "debito"
+            )
+            .reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
+
+        setTotalPagamentosGeral(totalGeral); // Soma de todos os pagamentos de fiado
+        setTotalPagamentosPix(totalPixPg); // Pagamentos de fiado em Pix
+        setTotalPagamentosDinheiro(totalDinheiroPg); // Pagamentos de fiado em Dinheiro
+        setTotalPagamentosCartao(totalCartaoPgGeral); // Pagamentos de fiado com Cartão (Débito + Crédito)
+        setTotalPagamentosCartaoDebito(totalCartaoDebitoPg); // Pagamentos de fiado com Cartão de Débito
+
         if (onTotalChange) {
-            onTotalChange(totalGeral);
+            onTotalChange(totalGeral); 
         }
         setPagamentosCurrentPage(1);
     }, [allPagamentos, onTotalChange]);
 
     // Cálculo Total em Caixa
     useEffect(() => {
-        const calculatedTotalCaixa = totalSalesDinheiro + totalSalesPix + totalPagamentosGeral;
+        const calculatedTotalCaixa = 
+            totalSalesDinheiro + 
+            totalSalesPix + 
+            totalSalesCartaoDebito + // Vendas diretas em Débito
+            totalPagamentosDinheiro + // Pagamentos de fiado em Dinheiro
+            totalPagamentosPix + // Pagamentos de fiado em Pix
+            totalPagamentosCartaoDebito; // Pagamentos de fiado em Cartão de Débito
+        
         setTotalEmCaixa(calculatedTotalCaixa);
-    }, [totalSalesDinheiro, totalSalesPix, totalPagamentosGeral]);
+    }, [
+        totalSalesDinheiro, 
+        totalSalesPix, 
+        totalSalesCartaoDebito, 
+        totalPagamentosDinheiro, 
+        totalPagamentosPix, 
+        totalPagamentosCartaoDebito // Adicionada dependência
+    ]);
+
+
 
     // Cálculo Lucro Estimado
     useEffect(() => {
@@ -303,7 +365,7 @@ const Vendas = ({ onTotalChange }) => {
     // *** FUNÇÃO exportSalePDF IMPLEMENTADA ***
     const exportSalePDF = () => {
         if (!selectedSale) return;
-        
+
         const doc = new jsPDF();
         const margin = 14;
         let currentY = 20;
@@ -448,7 +510,7 @@ const Vendas = ({ onTotalChange }) => {
         <div id='vendas'>
             <section id='filtersSection'>
                 <h2>Filtros</h2>
-                 <div id='clientFilter'>
+                <div id='clientFilter'>
                     <label htmlFor="filterName">Filtrar por nome cliente (Vendas):</label>
                     <input
                         className='form-control'
@@ -492,7 +554,7 @@ const Vendas = ({ onTotalChange }) => {
                         />
                     </div>
                 )}
-                 <div id='exportReportButton' style={{ marginTop: '15px' }}>
+                <div id='exportReportButton' style={{ marginTop: '15px' }}>
                     <button onClick={exportReportPDF} className='btn btn-primary'>
                         Exportar Relatório PDF
                     </button>
@@ -500,50 +562,53 @@ const Vendas = ({ onTotalChange }) => {
             </section>
 
             <section id='summaryAndKpisSection'>
-                 <h2>Resumo: {currentPeriodDescription}</h2>
-                 <div id='kpisSection' style={{ marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px solid #eee' }}>
-                     <h3>Indicadores Chave (KPIs)</h3>
-                     <p><strong>Nº Vendas:</strong> {filteredSales.length}</p>
-                     <p><strong>Nº Pagamentos Fiado:</strong> {allPagamentos.length}</p>
-                     <p><strong>% Vendas Fiado:</strong> {fiadoPercentage.toFixed(1)}%</p>
-                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '5px' }}>
-                         <label htmlFor="profitMarginInput"><strong>Lucro Estimado (@</strong></label>
-                         <input 
-                            type="number" 
+                <h2>Resumo: {currentPeriodDescription}</h2>
+                <div id='kpisSection' style={{ marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px solid #eee' }}>
+                    <h3>Indicadores Chave (KPIs)</h3>
+                    <p><strong>Nº Vendas:</strong> {filteredSales.length}</p>
+                    <p><strong>Nº Pagamentos Fiado:</strong> {allPagamentos.length}</p>
+                    <p><strong>% Vendas Fiado:</strong> {fiadoPercentage.toFixed(1)}%</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '5px' }}>
+                        <label htmlFor="profitMarginInput"><strong>Lucro Estimado (@</strong></label>
+                        <input
+                            type="number"
                             id="profitMarginInput"
                             value={profitMargin}
                             onChange={handleProfitMarginChange}
                             min="0"
                             max="100"
                             step="1"
-                            style={{ width: '60px', padding: '2px 5px' }} 
+                            style={{ width: '60px', padding: '2px 5px' }}
                             className='form-control'
-                         />
-                         <label htmlFor="profitMarginInput"><strong>%):</strong> R$ {estimatedProfit.toFixed(2).replace('.', ',')}</label>
-                     </div>
-                 </div>
-                 <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '20px' }}>
-                     <div id='salesNumbers'>
-                         <h4>Vendas</h4>
-                         <p><strong>Total Vendido:</strong> R$ {totalSalesValue.toFixed(2).replace('.', ',')}</p>
-                         <p><strong>Total Fiado Gerado:</strong> R$ {totalFiadoValue.toFixed(2).replace('.', ',')}</p>
-                         <p><strong>Recebido (Dinheiro):</strong> R$ {totalSalesDinheiro.toFixed(2).replace('.', ',')}</p>
-                         <p><strong>Recebido (Pix):</strong> R$ {totalSalesPix.toFixed(2).replace('.', ',')}</p>
-                         <p><strong>Recebido (Total Vendas):</strong> R$ {(totalSalesDinheiro + totalSalesPix).toFixed(2).replace('.', ',')}</p>
-                     </div>
-                     <div id='pagamentosNumbers'>
-                         <h4>Pagamentos de Fiado</h4>
-                         <p><strong>Total Recebido:</strong> R$ {totalPagamentosGeral.toFixed(2).replace('.', ',')}</p>
-                         <p><strong>Recebido (Dinheiro):</strong> R$ {totalPagamentosDinheiro.toFixed(2).replace('.', ',')}</p>
-                         <p><strong>Recebido (Pix):</strong> R$ {totalPagamentosPix.toFixed(2).replace('.', ',')}</p>
-                     </div>
-                 </div>
-                 <div id='totalCaixa' style={{ marginTop: '20px', paddingTop: '15px', borderTop: '2px solid #666', textAlign: 'center', fontSize: '1.2em' }}>
+                        />
+                        <label htmlFor="profitMarginInput"><strong>%):</strong> R$ {estimatedProfit.toFixed(2).replace('.', ',')}</label>
+                    </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '20px' }}>
+                    <div id='salesNumbers'>
+                        <h4>Vendas</h4>
+                        <p><strong>Total Vendido:</strong> R$ {totalSalesValue.toFixed(2).replace('.', ',')}</p>
+                        <p><strong>Total Fiado Gerado:</strong> R$ {totalFiadoValue.toFixed(2).replace('.', ',')}</p>
+                        <p><strong>Recebido (Dinheiro):</strong> R$ {totalSalesDinheiro.toFixed(2).replace('.', ',')}</p>
+                        <p><strong>Recebido (Pix):</strong> R$ {totalSalesPix.toFixed(2).replace('.', ',')}</p>
+                        <p><strong>Recebido (Cartão):</strong> R$ {totalSalesCartaoDebito.toFixed(2).replace('.', ',')}</p>
+                        <p><strong>Recebido (Total Vendas):</strong> R$ {(totalSalesDinheiro + totalSalesPix + totalSalesCartaoDebito).toFixed(2).replace('.', ',')}</p>
+                    </div>
+                    <div id='pagamentosNumbers'> {/* Supondo que o ID seja este ou similar */}
+                        <h4>Pagamentos Recebidos (Fiado)</h4>
+                        <p><strong>Recebido (Dinheiro):</strong> R$ {totalPagamentosDinheiro.toFixed(2).replace('.', ',')}</p>
+                        <p><strong>Recebido (Pix):</strong> R$ {totalPagamentosPix.toFixed(2).replace('.', ',')}</p>
+                        <p><strong>Recebido (Cartão):</strong> R$ {totalPagamentosCartao.toFixed(2).replace('.', ',')}</p> {/* Nova linha */}
+                        <p><strong>Recebido (Total Pagamentos):</strong> R$ {totalPagamentosGeral.toFixed(2).replace('.', ',')}</p> {/* totalPagamentosGeral já inclui todos os métodos */}
+                    </div>
+
+                </div>
+                <div id='totalCaixa' style={{ marginTop: '20px', paddingTop: '15px', borderTop: '2px solid #666', textAlign: 'center', fontSize: '1.2em' }}>
                     <h3 style={{ marginBottom: '10px' }}>Total em Caixa no Período</h3>
                     <p style={{ fontSize: '1.4em', fontWeight: 'bold', color: '#27ae60' }}>
                         R$ {totalEmCaixa.toFixed(2).replace('.', ',')}
                     </p>
-                    <small>(Soma de: Vendas Dinheiro + Vendas Pix + Total Pagamentos Fiado)</small>
+                    <small>(Soma de: Vendas Dinheiro + Vendas Pix + Vendas Cartão (débito) + Total Pagamentos Fiado)</small>
                 </div>
             </section>
 
@@ -563,16 +628,16 @@ const Vendas = ({ onTotalChange }) => {
                         </li>
                     ))}
                 </ul>
-                <Pagination 
-                    currentPage={salesCurrentPage} 
-                    totalPages={salesTotalPages} 
-                    onPageChange={setSalesCurrentPage} 
+                <Pagination
+                    currentPage={salesCurrentPage}
+                    totalPages={salesTotalPages}
+                    onPageChange={setSalesCurrentPage}
                 />
             </section>
 
             <section id='pagamentosSection'>
                 <h2>Pagamentos de Fiado Recebidos ({allPagamentos.length})</h2>
-                 {allPagamentos.length === 0 && !loading && (
+                {allPagamentos.length === 0 && !loading && (
                     <p>Nenhum pagamento encontrado para o período selecionado.</p>
                 )}
                 <ul>
@@ -586,16 +651,16 @@ const Vendas = ({ onTotalChange }) => {
                         </li>
                     ))}
                 </ul>
-                 <Pagination 
-                    currentPage={pagamentosCurrentPage} 
-                    totalPages={pagamentosTotalPages} 
-                    onPageChange={setPagamentosCurrentPage} 
+                <Pagination
+                    currentPage={pagamentosCurrentPage}
+                    totalPages={pagamentosTotalPages}
+                    onPageChange={setPagamentosCurrentPage}
                 />
             </section>
 
             {showModal && selectedSale && (
-                 <div id='modal' onClick={closeModal}>
-                     <div id="modalContent" onClick={(e) => e.stopPropagation()}> 
+                <div id='modal' onClick={closeModal}>
+                    <div id="modalContent" onClick={(e) => e.stopPropagation()}>
                         <button id='closeModal' className="material-symbols-outlined" onClick={closeModal}>close</button>
                         <h2>Detalhes da Venda:</h2>
                         <p><strong>Operador:</strong> {selectedSale.Operador || 'N/A'}</p>
@@ -603,10 +668,33 @@ const Vendas = ({ onTotalChange }) => {
                         <p><strong>Telefone:</strong> {selectedSale.Cliente?.telefone || 'N/A'}</p>
                         <p><strong>Data:</strong> {selectedSale.Data?.seconds ? new Date(selectedSale.Data.seconds * 1000).toLocaleString('pt-BR') : 'N/A'}</p>
                         <p><strong>Total:</strong> R$ {(selectedSale.TotalVenda || 0).toFixed(2)}</p>
-                        <p><strong>Pago em Dinheiro:</strong> R$ {(selectedSale.PagoDinheiro || 0).toFixed(2)}</p>
-                        <p><strong>Pago em Pix:</strong> R$ {(selectedSale.PagoPix || 0).toFixed(2)}</p>
-                        <p><strong>Fiado:</strong> R$ {(selectedSale.Fiado || 0).toFixed(2)}</p>
+
+                        {selectedSale.PagoDinheiro > 0 && (
+                            <p><strong>Pago em Dinheiro:</strong> R$ {(selectedSale.PagoDinheiro || 0).toFixed(2)}</p>
+                        )}
+
+                        {selectedSale.PagoPix > 0 && (
+                            <p><strong>Pago em Pix:</strong> R$ {(selectedSale.PagoPix || 0).toFixed(2)}</p>
+                        )}
+
+                        {selectedSale.PagoCartao > 0 && (
+                            <>
+                                <p><strong>Pago em Cartão:</strong> R$ {(selectedSale.PagoCartao || 0).toFixed(2)}</p>
+                                {selectedSale.TipoCartao && (
+                                    <p><strong>Tipo de Cartão:</strong> {selectedSale.TipoCartao === 'credito' ? 'Crédito' : 'Débito'}</p>
+                                )}
+                                {selectedSale.TipoCartao === 'credito' && selectedSale.ParcelasCartao > 0 && (
+                                    <p><strong>Parcelas:</strong> {selectedSale.ParcelasCartao}x</p>
+                                )}
+                            </>
+                        )}
+
+                        {selectedSale.Fiado > 0 && (
+                            <p><strong>Fiado:</strong> R$ {(selectedSale.Fiado || 0).toFixed(2)}</p>
+                        )}
+
                         <p><strong>Forma Pagamento Predominante:</strong> {selectedSale.FormaPagamento || 'N/A'}</p>
+
                         <ul>
                             <strong><h3>Itens da Venda:</h3></strong>
                             {(selectedSale.Lista || []).map((item, index) => (
@@ -617,7 +705,7 @@ const Vendas = ({ onTotalChange }) => {
                         </ul>
                         <div className='modalActions'>
                             {/* Botão chama a função implementada agora */}
-                            <button onClick={exportSalePDF} className='btn btn-primary'>Exportar PDF Venda</button> 
+                            <button onClick={exportSalePDF} className='btn btn-primary'>Exportar PDF Venda</button>
                             <button onClick={handleDeleteSale} className='btn btn-danger'>Excluir Venda</button>
                         </div>
                     </div>

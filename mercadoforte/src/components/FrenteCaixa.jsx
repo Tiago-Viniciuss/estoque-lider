@@ -91,12 +91,11 @@ const LoginModal = ({ onLoginSuccess, empresaId }) => {
             />
           </div>
           <div className="form-actions">
-            <button type="submit" className="btn-save" disabled={isLoggingIn}>
+            <button type="submit" className="loginCashierBtn" disabled={isLoggingIn}>
               {isLoggingIn ? 'Entrando...' : 'Entrar'}
             </button>
           </div>
         </form>
-        <p className="security-warning"><b>Atenção:</b> O sistema de login atual é simplificado e não seguro para produção.</p>
       </div>
     </div>
   );
@@ -129,7 +128,14 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   const [paymentAmountSection, setPaymentAmountSection] = useState(false)
   const endOfListRef = useRef(null);
   const [cashPayment, setCashPayment] = useState(false)
-  const [pixPayment, setPixPayment] = useState(false)
+  const [pixPayment, setPixPayment] = useState(false);
+  // Novos estados para pagamento com cartão
+  const [cardPaidAmount, setCardPaidAmount] = useState('');
+  const [cardPaymentType, setCardPaymentType] = useState(''); // 'credito' ou 'debito'
+  const [cardPayment, setCardPayment] = useState(false);
+  const [installments, setInstallments] = useState(1); // Para crédito
+  const [showInstallments, setShowInstallments] = useState(false); // Para exibir o seletor de parcelas
+
   const [showLoginModal, setShowLoginModal] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine); // Estado para status online
 // Efeito para monitorar status online/offline
@@ -353,6 +359,13 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
     setPaymentAmountSection(false);
     setCashPayment(false);
     setPixPayment(false);
+    // Resetar estados do cartão
+    setCardPaidAmount("");
+    setCardPaymentType("");
+    setCardPayment(false);
+    setInstallments(1);
+    setShowInstallments(false);
+
     setSaveShoppingContainer(false);
     if (inputRef.current) {
       inputRef.current.focus();
@@ -375,24 +388,23 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
     return parseFloat(finalTotal.toFixed(2));
   };
 
-  // <<< useEffect MODIFICADO para a NOVA LÓGICA de FIADO e TROCO >>>
+  // <<< useEffect MODIFICADO para a NOVA LÓGICA de FIADO, TROCO e CARTÃO >>>
   useEffect(() => {
     const totalCalculado = calculateTotal();
-    const valorPagoDinheiro = parseFloat(paid || 0); // Quanto da compra será pago em dinheiro
+    const valorPagoDinheiro = parseFloat(paid || 0);
     const valorPagoPix = parseFloat(pixPaid || 0);
-    const valorInseridoDinheiro = parseFloat(insertedValue || 0); // Quanto dinheiro físico foi dado
+    const valorPagoCartao = parseFloat(cardPaidAmount || 0); // Novo
+    const valorInseridoDinheiro = parseFloat(insertedValue || 0);
 
     let valorFiado = 0;
     let troco = 0;
 
-    // Calcula quanto falta pagar DEPOIS de aplicar o dinheiro e o pix erro
-    const restanteAposPagamentos = totalCalculado - valorPagoDinheiro - valorPagoPix;
+    // Calcula quanto falta pagar DEPOIS de aplicar todos os pagamentos
+    const restanteAposPagamentos = totalCalculado - valorPagoDinheiro - valorPagoPix - valorPagoCartao; // Modificado
 
     if (restanteAposPagamentos > 0) {
-      // Se ainda falta pagar, isso é o valor fiado
       valorFiado = restanteAposPagamentos;
     } else {
-      // Se não falta pagar (ou foi pago a mais com pix/dinheiro), fiado é zero
       valorFiado = 0;
     }
 
@@ -401,19 +413,16 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
       if (valorInseridoDinheiro >= valorPagoDinheiro) {
         troco = valorInseridoDinheiro - valorPagoDinheiro;
       } else {
-        // Se inseriu menos do que deveria pagar em dinheiro, não há troco.
-        // Poderia adicionar um aviso aqui se desejado.
         troco = 0;
       }
     } else {
-      // Se não é pagamento em dinheiro, ou não inseriu valor, ou não definiu valor a pagar em dinheiro, não há troco.
       troco = 0;
     }
 
     setNoPaid(parseFloat(valorFiado.toFixed(2)));
     setChangeDue(parseFloat(troco.toFixed(2)));
 
-  }, [paid, pixPaid, insertedValue, cashPayment, shoppingList, extraAmount, discountAmount, discount]); // Adiciona insertedValue e cashPayment às dependências
+  }, [paid, pixPaid, cardPaidAmount, insertedValue, cashPayment, shoppingList, extraAmount, discountAmount, discount, calculateTotal]); // Adicionado cardPaidAmount e calculateTotal às dependências
 
   // Função genérica para inputs de pagamento
   const handlePaymentChange = (e, setValue) => {
@@ -458,8 +467,16 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
   }
 
   const handlePaymentMethod = (e) => {
-    setPaymentMethod(e.target.value)
-  }
+    const newPaymentMethod = e.target.value;
+    setPaymentMethod(newPaymentMethod);
+
+    // Reset card-specific details if the method changes,
+    // or if switching to a card method to ensure fresh selections for card type/installments.
+    setCardPaymentType('');
+    setInstallments(1);
+    setShowInstallments(false);
+    // setCardPaidAmount(''); // Will be handled by showPaymentAmount or user input
+  };
 
   const showPaymentMethod = () => {
     if (!clientName.trim()) {
@@ -475,24 +492,32 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
       alert("Selecione uma forma de pagamento.");
       return;
     }
-    setPaymentMethodSection(false)
-    setPaymentAmountSection(true)
-    const isCash = paymentMethod === 'Dinheiro' || paymentMethod === 'DinheiroPix';
-    const isPix = paymentMethod === 'Pix' || paymentMethod === 'DinheiroPix';
+    setPaymentMethodSection(false);
+    setPaymentAmountSection(true);
+
+    const isCash = paymentMethod === 'Dinheiro' || paymentMethod === 'DinheiroPix' || paymentMethod === 'DinheiroCartao';
+    const isPix = paymentMethod === 'Pix' || paymentMethod === 'DinheiroPix' || paymentMethod === 'PixCartao';
+    const isCard = paymentMethod === 'Cartão' || paymentMethod === 'DinheiroCartao' || paymentMethod === 'PixCartao';
+
     setCashPayment(isCash);
     setPixPayment(isPix);
-    // Resetar valores ao mudar de seção ou método
-    if (paymentMethod === 'Fiado') {
-      setPaid('');
-      setPixPaid('');
-      setInsertedValue('');
-    } else {
-      // Se não for fiado, pode resetar ou pré-popular
-      // Ex: pré-popular 'paid' com o total se for só dinheiro?
-      // Por enquanto, apenas reseta o insertedValue
-      setInsertedValue('');
+    setCardPayment(isCard);
+
+    // Reset payment amounts when entering this section
+    setPaid('');
+    setPixPaid('');
+    setCardPaidAmount('');
+    setInsertedValue(''); 
+    setChangeDue(0);
+
+    // Card specific resets (type and installments) are handled by handlePaymentMethod
+    // or will be set by user in this section.
+    if (!isCard) {
+        setCardPaymentType('');
+        setInstallments(1);
+        setShowInstallments(false);
     }
-    setChangeDue(0); // Resetar troco ao entrar/mudar método
+    // No specific action for 'Fiado' here as amounts are globally reset above.
   }
 
   const backPaymentMethod = () => {
@@ -558,8 +583,9 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
     const totalVenda = calculateTotal();
     const valorPagoDinheiro = parseFloat(paid || 0); // Quanto da compra PAGO em dinheiro
     const valorPagoPix = parseFloat(pixPaid || 0);
+    const valorPagoCartao = parseFloat(cardPaidAmount || 0); // <<< NOVO: Valor pago com cartão
     const valorInseridoDinheiro = parseFloat(insertedValue || 0); // Dinheiro FÍSICO recebido
-    const valorPagoTotalEfetivo = valorPagoDinheiro + valorPagoPix; // Quanto da compra foi coberto
+    const valorPagoTotalEfetivo = valorPagoDinheiro + valorPagoPix + valorPagoCartao; // <<< MODIFICADO: Inclui cartão
 
     // Recalcula fiado e troco com base nos valores finais para garantir consistência
     let valorFiadoFinal = 0;
@@ -600,6 +626,42 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
       return;
     }
 
+    // Validações para pagamento com cartão
+    if (cardPayment) {
+      if (!cardPaymentType) {
+        alert("Por favor, selecione o tipo de cartão (Crédito ou Débito).");
+        return;
+      }
+      if (parseFloat(cardPaidAmount || 0) <= 0) {
+        alert("Por favor, informe um valor válido para o pagamento com cartão.");
+        return;
+      }
+      if (cardPaymentType === 'credito' && installments <= 0) {
+        // Esta validação pode ser redundante se o select de parcelas sempre tiver valor > 0
+        alert("Por favor, selecione um número válido de parcelas para o cartão de crédito.");
+        return;
+      }
+    }
+
+    // Validação para garantir que o valor pago não excede o total da venda (exceto se houver troco em dinheiro)
+    const totalVendaCalculado = calculateTotal();
+    if (valorPagoTotalEfetivo > totalVendaCalculado && valorTrocoFinal === 0) {
+        if (!(cashPayment && valorInseridoDinheiro > valorPagoDinheiro)) {
+            alert(`O valor total pago (R$ ${valorPagoTotalEfetivo.toFixed(2)}) não pode exceder o total da venda (R$ ${totalVendaCalculado.toFixed(2)}) a menos que haja troco em dinheiro.`);
+            return;
+        }
+    }
+    // Validação para garantir que a soma dos pagamentos parciais não seja zero se não for fiado
+    if (paymentMethod !== 'Fiado' && valorPagoTotalEfetivo <= 0) {
+        alert("O valor total pago deve ser maior que zero para esta forma de pagamento.");
+        return;
+    }
+
+    // Validação para garantir que a soma dos pagamentos é igual ao total da venda, se não for fiado e não houver troco
+    if (paymentMethod !== 'Fiado' && valorTrocoFinal === 0 && valorFiadoFinal === 0 && valorPagoTotalEfetivo !== totalVendaCalculado) {
+        alert(`A soma dos valores pagos (R$ ${valorPagoTotalEfetivo.toFixed(2)}) deve ser igual ao total da venda (R$ ${totalVendaCalculado.toFixed(2)}) ou gerar fiado/troco.`);
+        return;
+    }
 
 
     setLoading(true);
@@ -662,7 +724,10 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
         Data: new Date(),
         PagoDinheiro: valorPagoDinheiro, // Quanto da VENDA foi pago em dinheiro
         PagoPix: valorPagoPix,
-        PagoTotal: valorPagoTotalEfetivo, // Soma do que foi pago (dinheiro + pix)
+        PagoCartao: valorPagoCartao, // <<< NOVO: Valor pago com cartão
+        TipoCartao: cardPayment ? cardPaymentType : '', // <<< NOVO: Tipo de cartão (crédito/débito)
+        ParcelasCartao: cardPayment && cardPaymentType === 'credito' ? installments : 0, // <<< NOVO: Número de parcelas
+        PagoTotal: valorPagoTotalEfetivo, // Soma do que foi pago (dinheiro + pix + cartão)
         ValorInseridoDinheiro: cashPayment ? valorInseridoDinheiro : 0, // <<< Salva o valor inserido
         Fiado: valorFiadoFinal,
         Troco: valorTrocoFinal,
@@ -875,7 +940,10 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                             <option value="" disabled>Selecione...</option>
                             <option value="Dinheiro">Dinheiro</option>
                             <option value="Pix">Pix</option>
+                            <option value="Cartão">Cartão</option>
                             <option value="DinheiroPix">Dinheiro + Pix</option>
+                            <option value="DinheiroCartao">Dinheiro + Cartão</option>
+                            <option value="PixCartao">Pix + Cartão</option>
                             <option value="Fiado">Fiado</option>
                           </select>
                         </div>
@@ -941,6 +1009,70 @@ const FrenteCaixa = ({ shoppingList, setShoppingList }) => {
                               placeholder="0.00" required
                             />
                           </div>
+                        )}
+
+                        {/* Detalhes do Pagamento com Cartão */}
+                        {cardPayment && (
+                          <>
+                            <div id='cardType'  className="form-group">
+                              <label>Tipo de Cartão: {!cardPaymentType ? <span style={{color: "red"}}>*</span> : ""}</label>
+                              <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <label style={{ marginRight: '15px' }}>
+                                  <input
+                                    type="radio"
+                                    name="cardPaymentType"
+                                    value="debito"
+                                    checked={cardPaymentType === 'debito'}
+                                    onChange={(e) => {
+                                      setCardPaymentType(e.target.value);
+                                      setShowInstallments(false);
+                                    }}
+                                  /> Débito
+                                </label>
+                                <label>
+                                  <input
+                                    type="radio"
+                                    name="cardPaymentType"
+                                    value="credito"
+                                    checked={cardPaymentType === 'credito'}
+                                    onChange={(e) => {
+                                      setCardPaymentType(e.target.value);
+                                      setShowInstallments(true);
+                                    }}
+                                  /> Crédito
+                                </label>
+                              </div>
+                            </div>
+
+                            <div className="form-group">
+                              <label htmlFor="cardPaidAmount">Valor Pago no Cartão: {cardPayment && parseFloat(cardPaidAmount || 0) <= 0 ? <span style={{color: "red"}}>*</span> : ""}</label>
+                              <input
+                                type="text"
+                                inputMode="decimal"
+                                id="cardPaidAmount"
+                                value={cardPaidAmount}
+                                onChange={(e) => handlePaymentChange(e, setCardPaidAmount)}
+                                placeholder="0.00"
+                                required={cardPayment}
+                              />
+                            </div>
+
+                            {showInstallments && cardPaymentType === 'credito' && (
+                              <div className="form-group">
+                                <label htmlFor="installments">Número de Parcelas:</label>
+                                <select
+                                  id="installments"
+                                  value={installments}
+                                  onChange={(e) => setInstallments(parseInt(e.target.value))}
+                                  required
+                                >
+                                  {[...Array(12).keys()].map(i => (
+                                    <option key={i + 1} value={i + 1}>{i + 1}x</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                          </>
                         )}
 
                         {/* Exibição de Fiado e Troco (baseado na nova lógica) */}

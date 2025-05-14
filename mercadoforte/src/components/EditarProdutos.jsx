@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { doc, setDoc, getDocs, collection, deleteDoc, query, where } from 'firebase/firestore';
+import { doc, setDoc, getDocs, collection, deleteDoc, query, where, Timestamp, orderBy } from 'firebase/firestore';
 import { db } from '../firebaseConfig'; // Ajuste o caminho conforme necessário
 import LoadingSpinner from '../components/LoadingSpinner.jsx'; // Ajuste o caminho conforme necessário
 import '../styles/EditarProdutos.css'; // Importa o CSS refatorado
@@ -236,12 +236,15 @@ const EditarProdutos = () => {
     const [allProducts, setAllProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState(null);
-    const [filterCategory, setFilterCategory] = useState('Todos');
-    const [searchTerm, setSearchTerm] = useState('');
+    const [filterCategory, setFilterCategory] = useState("Todos");
+    const [searchTerm, setSearchTerm] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const empresaId = localStorage.getItem('empresaId');
-    const [selectedProductsForPDF, setSelectedProductsForPDF] = useState([]); 
+    const empresaId = localStorage.getItem("empresaId");
+    const [selectedProductsForPDF, setSelectedProductsForPDF] = useState([]);
+    const [mostSoldProducts, setMostSoldProducts] = useState([]); // Novo estado
+    const [leastSoldProducts, setLeastSoldProducts] = useState([]); // Novo estado
+    const [loadingRanking, setLoadingRanking] = useState(false); // Novo estado de loading para o ranking 
 
     const productsRef = useMemo(() => {
         if (!empresaId) return null;
@@ -274,6 +277,79 @@ const EditarProdutos = () => {
     useEffect(() => {
         fetchProducts();
     }, [fetchProducts]);
+
+    // Novo useEffect para buscar dados de vendas para o ranking
+    useEffect(() => {
+        const fetchSalesDataForRanking = async () => {
+            if (!empresaId) {
+                console.log("ID da empresa não encontrado para ranking.");
+                return;
+            }
+            setLoadingRanking(true);
+            setError(null); // Limpa erros anteriores
+
+            try {
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                const thirtyDaysAgoTimestamp = Timestamp.fromDate(thirtyDaysAgo);
+
+                const salesRef = collection(db, `Empresas/${empresaId}/Vendas`);
+                const salesQuery = query(
+                    salesRef,
+                    where("Data", ">=", thirtyDaysAgoTimestamp),
+                    orderBy("Data", "desc")
+                );
+
+                const salesSnapshot = await getDocs(salesQuery);
+                const salesData = salesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Processar e contabilizar vendas por produto
+                const productQuantities = {};
+                salesData.forEach(sale => {
+                    if (sale.Lista && Array.isArray(sale.Lista)) {
+                        sale.Lista.forEach(item => {
+                            if (item.nome && typeof item.quantity === 'number') {
+                                productQuantities[item.nome] = (productQuantities[item.nome] || 0) + item.quantity;
+                            }
+                        });
+                    }
+                });
+
+                // Converter para array e ordenar
+                const sortedProducts = Object.entries(productQuantities)
+                    .map(([nome, quantity]) => ({ nome, quantity }))
+                    .sort((a, b) => b.quantity - a.quantity); // Decrescente para mais vendidos
+
+                // Selecionar Top 5 mais vendidos
+                const top5Sold = sortedProducts.slice(0, 5);
+                setMostSoldProducts(top5Sold);
+                console.log("Top 5 Mais Vendidos:", top5Sold);
+
+                // Ordenar para menos vendidos (crescente)
+                // Para os menos vendidos, precisamos considerar todos os produtos que tiveram vendas,
+                // incluindo os que venderam muito pouco.
+                // Se quiséssemos incluir produtos com 0 vendas do catálogo geral, a lógica seria mais complexa
+                // e precisaria cruzar com `allProducts`.
+                // Por ora, focaremos nos que tiveram pelo menos uma venda e estão em `productQuantities`.
+                const leastSortedProducts = Object.entries(productQuantities)
+                    .map(([nome, quantity]) => ({ nome, quantity }))
+                    .sort((a, b) => a.quantity - b.quantity); // Crescente para menos vendidos
+                
+                // Selecionar Top 5 menos vendidos (os 5 primeiros da lista ordenada crescente)
+                const bottom5Sold = leastSortedProducts.slice(0, 5);
+                setLeastSoldProducts(bottom5Sold);
+                console.log("Top 5 Menos Vendidos (dentre os que venderam algo):", bottom5Sold);
+
+            } catch (err) {
+                console.error("Erro ao buscar vendas para ranking:", err);
+                setError("Falha ao carregar dados de vendas para o ranking. Tente novamente.");
+            } finally {
+                setLoadingRanking(false);
+            }
+        };
+
+        fetchSalesDataForRanking();
+    }, [empresaId]); // Executa quando empresaId mudar (e na montagem inicial se já existir)
 
     useEffect(() => {
         let currentFiltered = [...allProducts];
@@ -389,13 +465,47 @@ const EditarProdutos = () => {
     }
 
     return (
-        <div className='products-container'>
-            <h1>Editar Produtos</h1>
+        <div className="products-container">
+            <h1>Gerenciar Estoque</h1>
 
             {error && <p style={{ color: 'red' }}>Erro: {error}</p>}
 
-            {!selectedProduct ? (
-                <>
+            {/* Seção de Ranking de Produtos */}
+            <section className="product-ranking-section" style={{ marginBottom: '30px', padding: '20px', border: '1px solid #eee', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
+                <h3>Insights de Vendas (Últimos 30 Dias)</h3>
+                {loadingRanking ? (
+                    <LoadingSpinner />
+                ) : (
+                    <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap' }}>
+                        <div>
+                            <h4>Top 5 Mais Vendidos</h4>
+                            {mostSoldProducts.length > 0 ? (
+                                <ul style={{ listStyleType: 'decimal', paddingLeft: '20px' }}>
+                                    {mostSoldProducts.map(product => (
+                                        <li key={`most-${product.nome}`}>{product.nome} ({product.quantity} unidades)</li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p>Nenhum dado de produto mais vendido disponível.</p>
+                            )}
+                        </div>
+                        <div>
+                            <h4>Top 5 Menos Vendidos</h4>
+                            {leastSoldProducts.length > 0 ? (
+                                <ul style={{ listStyleType: 'decimal', paddingLeft: '20px' }}>
+                                    {leastSoldProducts.map(product => (
+                                        <li key={`least-${product.nome}`}>{product.nome} ({product.quantity} unidades)</li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p>Nenhum dado de produto menos vendido disponível (ou todos venderam igualmente pouco).</p>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </section>
+
+            {!selectedProduct ? (                <>
                     <ProductFilter
                         currentCategory={filterCategory}
                         onFilterChange={setFilterCategory}

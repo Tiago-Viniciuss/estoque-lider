@@ -42,3 +42,9 @@
     border-radius: 5px;
     cursor: pointer;
 }
+
+
+.forgetPassword {
+    color: rgb(58, 83, 246);
+    font-size: 12px;
+}
