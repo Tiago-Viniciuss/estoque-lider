@@ -77,13 +77,15 @@ const getDateRange = (filter) => {
         case 'specific':
             if (filter.specificDate) {
                 const [year, month, day] = filter.specificDate.split('-');
-                startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
-                endDate = new Date(year, month - 1, day + 1, 0, 0, 0, 0);
+                // Usar Date.UTC para criar as datas em Tempo Universal Coordenado
+                startDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+                endDate = new Date(Date.UTC(year, month - 1, parseInt(day) + 1, 0, 0, 0, 0)); // Use parseInt(day) + 1 just in case
             } else {
                 startDate = null;
                 endDate = null;
             }
             break;
+
         case 'allTime':
         default:
             startDate = null;
@@ -250,7 +252,7 @@ const Vendas = ({ onTotalChange }) => {
         const totalDinheiroPg = allPagamentos
             .filter(p => p.formaPagamento?.toLowerCase() === "dinheiro")
             .reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
-        
+
         // Total de pagamentos de fiado com cartão (geral: débito + crédito) - para fins informativos na seção pagamentosNumbers
         const totalCartaoPgGeral = allPagamentos
             .filter(p => p.formaPagamento && /cart[aã]o/i.test(p.formaPagamento))
@@ -258,9 +260,9 @@ const Vendas = ({ onTotalChange }) => {
 
         // Total de pagamentos de fiado especificamente com cartão de DÉBITO - para o caixa
         const totalCartaoDebitoPg = allPagamentos
-            .filter(p => 
-                p.formaPagamento && 
-                /cart[aã]o/i.test(p.formaPagamento) && 
+            .filter(p =>
+                p.formaPagamento &&
+                /cart[aã]o/i.test(p.formaPagamento) &&
                 p.tipoCartao?.toLowerCase() === "debito"
             )
             .reduce((acc, p) => acc + (Number(p.valor) || 0), 0);
@@ -272,28 +274,28 @@ const Vendas = ({ onTotalChange }) => {
         setTotalPagamentosCartaoDebito(totalCartaoDebitoPg); // Pagamentos de fiado com Cartão de Débito
 
         if (onTotalChange) {
-            onTotalChange(totalGeral); 
+            onTotalChange(totalGeral);
         }
         setPagamentosCurrentPage(1);
     }, [allPagamentos, onTotalChange]);
 
     // Cálculo Total em Caixa
     useEffect(() => {
-        const calculatedTotalCaixa = 
-            totalSalesDinheiro + 
-            totalSalesPix + 
+        const calculatedTotalCaixa =
+            totalSalesDinheiro +
+            totalSalesPix +
             totalSalesCartaoDebito + // Vendas diretas em Débito
             totalPagamentosDinheiro + // Pagamentos de fiado em Dinheiro
             totalPagamentosPix + // Pagamentos de fiado em Pix
             totalPagamentosCartaoDebito; // Pagamentos de fiado em Cartão de Débito
-        
+
         setTotalEmCaixa(calculatedTotalCaixa);
     }, [
-        totalSalesDinheiro, 
-        totalSalesPix, 
-        totalSalesCartaoDebito, 
-        totalPagamentosDinheiro, 
-        totalPagamentosPix, 
+        totalSalesDinheiro,
+        totalSalesPix,
+        totalSalesCartaoDebito,
+        totalPagamentosDinheiro,
+        totalPagamentosPix,
         totalPagamentosCartaoDebito // Adicionada dependência
     ]);
 
